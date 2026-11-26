@@ -171,7 +171,7 @@ export default function VendorOrderDetailClient({ order, currency }: VendorOrder
           </div>
           <p className="text-[11px] text-[var(--foreground-muted)]">
             Placed {formatOrderDate(order.placedAt) || "—"} · {units} item{units === 1 ? "" : "s"} ·
-            your subtotal {formatPrice(order.subtotal, currency, { showDecimals: false })}
+            your subtotal {formatPrice(order.subtotal, currency)}
           </p>
         </div>
 
@@ -219,12 +219,12 @@ export default function VendorOrderDetailClient({ order, currency }: VendorOrder
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs font-bold text-[var(--foreground)]">{item.title}</p>
                     <p className="text-[10px] text-[var(--foreground-muted)]">
-                      {formatPrice(item.price, currency, { showDecimals: false })} × {item.quantity}
+                      {formatPrice(item.price, currency)} × {item.quantity}
                     </p>
                   </div>
 
                   <p className="text-xs font-bold text-[var(--foreground)]">
-                    {formatPrice(item.price * item.quantity, currency, { showDecimals: false })}
+                    {formatPrice(item.price * item.quantity, currency)}
                   </p>
                 </li>
               ))}
@@ -235,7 +235,7 @@ export default function VendorOrderDetailClient({ order, currency }: VendorOrder
                 Your subtotal
               </p>
               <p className="text-sm font-bold text-[var(--foreground)]">
-                {formatPrice(order.subtotal, currency, { showDecimals: false })}
+                {formatPrice(order.subtotal, currency)}
               </p>
             </div>
           </section>
@@ -310,7 +310,7 @@ export default function VendorOrderDetailClient({ order, currency }: VendorOrder
               <Wallet className="h-3 w-3" />
               {order.paymentMethod ? order.paymentMethod.replace(/_/g, " ") : "Payment method not set"}
               {order.totalAmount !== null
-                ? ` · order total ${formatPrice(order.totalAmount, currency, { showDecimals: false })}`
+                ? ` · order total ${formatPrice(order.totalAmount, currency)}`
                 : ""}
             </p>
           </section>

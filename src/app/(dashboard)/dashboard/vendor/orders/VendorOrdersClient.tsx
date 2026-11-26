@@ -230,7 +230,7 @@ export default function VendorOrdersClient({
 
                     <div className="text-right">
                       <p className="text-xs font-bold text-[var(--foreground)]">
-                        {formatPrice(order.subtotal, currency, { showDecimals: false })}
+                        {formatPrice(order.subtotal, currency)}
                       </p>
                       <p className="text-[9px] uppercase tracking-wider text-[var(--foreground-muted)]">
                         Your subtotal
