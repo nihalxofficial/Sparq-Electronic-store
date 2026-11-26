@@ -35,7 +35,6 @@ import { toast } from "react-toastify";
 import type { NameType, ValueType } from "recharts/types/component/DefaultTooltipContent";
 import type { VendorAnalyticsReport, EngagementProductRow } from "@/types/vendor";
 import type { OrderFinancialAnalyticsResponse } from "@/types/financials";
-import OrderFinancialsSection from "@/components/shared/OrderFinancialsSection";
 import type { VendorAnalyticsExportData } from "@/lib/csvExport";
 import { exportVendorAnalyticsCsv } from "@/lib/csvExport";
 import { downloadVendorAnalyticsPdf } from "@/lib/dashboardPdf";
@@ -869,9 +868,7 @@ export default function VendorAnalyticsClient({
             Upgrade plan
           </Link>
         </section>
-      ) : (
-        <OrderFinancialsSection data={orderFinancials} mode="vendor" />
-      )}
+      ) : null}
 
       <div className={`grid grid-cols-1 gap-5 ${isDetailed ? "lg:grid-cols-2" : ""}`}>
         {/* ── Pipeline ── */}

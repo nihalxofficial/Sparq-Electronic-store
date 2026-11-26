@@ -92,8 +92,8 @@ export default function OrderFinancialModal({
                 </div>
               ) : (
                 <>
-                  {/* 1. Profit Comparison (Before vs After Discounts) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {/* 1. Summary KPIs */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--surface-alt)]/60 p-3.5">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
                         Original Total
@@ -108,25 +108,13 @@ export default function OrderFinancialModal({
 
                     <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--surface-alt)]/60 p-3.5">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
-                        Final Customer Paid
+                        {mode === "vendor" ? "Your Gross Revenue" : "Final Customer Paid"}
                       </p>
                       <p className="text-base font-extrabold mt-1 text-primary">
                         {money(order.finalCustomerPaid)}
                       </p>
                       <p className="text-[10px] text-[var(--foreground-muted)] mt-0.5">
-                        Includes {money(order.deliveryCharge)} shipping
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--surface-alt)]/60 p-3.5">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
-                        Profit (No Discounts)
-                      </p>
-                      <p className={`text-base font-extrabold mt-1 ${profitTone(order.expectedProfitWithoutDiscounts)}`}>
-                        {money(order.expectedProfitWithoutDiscounts)}
-                      </p>
-                      <p className="text-[10px] text-[var(--foreground-muted)] mt-0.5">
-                        Baseline margin without promos
+                        {mode === "admin" ? `Includes ${money(order.deliveryCharge)} shipping` : "Your items subtotal"}
                       </p>
                     </div>
 
@@ -138,13 +126,13 @@ export default function OrderFinancialModal({
                         ) : (
                           <TrendingDown className="w-3 h-3 text-rose-500" />
                         )}
-                        Net Profit (With Discounts)
+                        {mode === "vendor" ? "Your Net Profit" : "Total Net Profit"}
                       </p>
                       <p className={`text-base font-extrabold mt-1 ${profitTone(order.expectedProfitWithDiscounts)}`}>
                         {money(order.expectedProfitWithDiscounts)}
                       </p>
                       <p className="text-[10px] text-[var(--foreground-muted)] mt-0.5">
-                        After discounts, coupons, points &amp; fees
+                        After discounts, coupons, fees &amp; rider
                       </p>
                     </div>
                   </div>
@@ -204,10 +192,16 @@ export default function OrderFinancialModal({
                             {order.totalCost != null ? `-${money(order.totalCost)}` : "Missing cost"}
                           </dd>
                         </div>
-                        <div className="flex justify-between">
-                          <dt className="text-[var(--foreground-muted)]">Platform Commission</dt>
-                          <dd className="font-semibold">{money(order.platformCommissionTotal)}</dd>
-                        </div>
+                        {order.platformCommissionTotal > 0 && (
+                          <div className="flex justify-between">
+                            <dt className="text-[var(--foreground-muted)]">
+                              {mode === "admin" ? "Platform Commission (from Vendors)" : "Platform Commission (Expense)"}
+                            </dt>
+                            <dd className={`font-semibold ${mode === "vendor" ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                              {mode === "vendor" ? `-${money(order.platformCommissionTotal)}` : `+${money(order.platformCommissionTotal)}`}
+                            </dd>
+                          </div>
+                        )}
                         {(mode === "admin" || order.vendorRiderPayout > 0) && (
                           <div className="flex justify-between">
                             <dt className="text-[var(--foreground-muted)]">
@@ -342,6 +336,11 @@ export default function OrderFinancialModal({
                                 Comm: <strong className="text-[var(--foreground)]">{money(group.platformCommission)}</strong>
                               </span>
                             )}
+                            {group.riderPayout > 0 && (
+                              <span className="text-rose-600 dark:text-rose-400">
+                                Rider Fee: <strong>-{money(group.riderPayout)}</strong>
+                              </span>
+                            )}
                             <span>
                               Owner Net P/L:{" "}
                               <strong className={profitTone(group.netProfit)}>
@@ -369,9 +368,6 @@ export default function OrderFinancialModal({
                                 <th className="py-2 px-2 text-right">Cost</th>
                                 {group.platformCommission > 0 && (
                                   <th className="py-2 px-2 text-right">Comm.</th>
-                                )}
-                                {(mode === "admin" || group.riderPayout > 0) && (
-                                  <th className="py-2 px-2 text-right">Rider</th>
                                 )}
                                 <th className="py-2 px-2 text-right">P/L (No Disc.)</th>
                                 <th className="py-2 px-3 text-right">P/L (Net)</th>
@@ -406,14 +402,6 @@ export default function OrderFinancialModal({
                                           ({item.commissionPercent}%)
                                         </span>
                                       )}
-                                    </td>
-                                  )}
-                                  {(mode === "admin" || group.riderPayout > 0) && (
-                                    <td className="py-2.5 px-2 text-right">
-                                      {money(item.riderPayoutShare)}
-                                      <span className="block text-[9px] text-[var(--foreground-muted)]">
-                                        {item.riderPayoutPayer}
-                                      </span>
                                     </td>
                                   )}
                                   <td className={`py-2.5 px-2 text-right font-bold ${profitTone(item.profitBeforeDiscounts)}`}>

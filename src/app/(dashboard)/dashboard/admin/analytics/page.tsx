@@ -7,7 +7,6 @@ import { getAdminOrderFinancials } from "@/lib/api/financials";
 import SalesAnalyticsClient from "./SalesAnalyticsClient";
 import VendorDeskClient from "./VendorDeskClient";
 import EngagementClient from "./EngagementClient";
-import OrderFinancialsSection from "@/components/shared/OrderFinancialsSection";
 
 export const dynamic = "force-dynamic";
 
@@ -62,8 +61,6 @@ export default async function AdminAnalyticsPage({ searchParams }: AdminAnalytic
         topSellingByPeriod={data.topSellingByPeriod}
         orderFinancials={orderFinancials}
       />
-
-      <OrderFinancialsSection data={orderFinancials} mode="admin" />
 
       <VendorDeskClient report={asVendorDesk(deskRes, months)} months={months} />
 

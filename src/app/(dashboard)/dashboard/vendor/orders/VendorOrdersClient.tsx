@@ -134,20 +134,11 @@ export default function VendorOrdersClient({
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-bold text-[var(--foreground)]">Orders</h1>
-          <p className="text-[11px] text-[var(--foreground-muted)]">
-            Your own lines from every checkout. Another seller&apos;s items never appear here.
-          </p>
-        </div>
-        <Link
-          href="/dashboard/vendor/analytics"
-          className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-color)] bg-[var(--surface-elevated)] px-3 py-1.5 text-[11px] font-semibold text-[var(--foreground)] hover:bg-[var(--surface-alt)] transition-colors"
-        >
-          <Calculator className="h-3.5 w-3.5 text-primary" />
-          Order Financial Analytics
-        </Link>
+      <header>
+        <h1 className="text-lg font-bold text-[var(--foreground)]">Orders</h1>
+        <p className="text-[11px] text-[var(--foreground-muted)]">
+          Your own lines from every checkout. Another seller&apos;s items never appear here.
+        </p>
       </header>
 
       {/* Filters */}
