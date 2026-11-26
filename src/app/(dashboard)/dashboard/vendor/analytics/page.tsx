@@ -3,6 +3,7 @@ import Link from "next/link";
 import { BarChart3 } from "lucide-react";
 import { getRequiredRole } from "@/lib/core/session";
 import { asAnalytics, getMyAnalytics } from "@/lib/api/vendorAnalytics";
+import { getVendorOrderFinancials } from "@/lib/api/financials";
 import { asStore, getMyStore } from "@/lib/api/vendorStore";
 import { getSiteSettings } from "@/lib/api/siteSettings";
 import VendorAnalyticsClient from "./VendorAnalyticsClient";
@@ -30,10 +31,11 @@ export default async function VendorAnalyticsPage({ searchParams }: VendorAnalyt
   const requested = Number(params?.range);
   const range = RANGE_CHOICES.includes(requested) ? requested : 30;
 
-  const [report, store, settingsRes] = await Promise.all([
+  const [report, store, settingsRes, orderFinancials] = await Promise.all([
     getMyAnalytics(range).then(asAnalytics),
     getMyStore().then(asStore),
     getSiteSettings(),
+    getVendorOrderFinancials({ days: range, limit: 50 }),
   ]);
 
   if (!report) {
@@ -73,6 +75,7 @@ export default async function VendorAnalyticsPage({ searchParams }: VendorAnalyt
   return (
     <VendorAnalyticsClient
       report={report}
+      orderFinancials={orderFinancials}
       requestedRange={range}
       vendorName={store?.name || ""}
       currency={settingsRes?.data?.currency || "BDT"}
