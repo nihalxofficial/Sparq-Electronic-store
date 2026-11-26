@@ -61,29 +61,40 @@ function CompleteForm({
   const [code, setCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [canRetry, setCanRetry] = useState(false);
 
   const handleSubmit = async (event?: React.FormEvent) => {
     event?.preventDefault();
-    if (!delivery) return;
+    if (!delivery || isSubmitting) return;
 
     const value = code.trim();
     if (!/^\d{4,6}$/.test(value)) {
       setError("Enter the 6-digit code the customer read to you");
+      setCanRetry(false);
       return;
     }
 
     setIsSubmitting(true);
     setError("");
+    setCanRetry(false);
     try {
       const res = await completeDeliveryAction(delivery._id, value);
       if (res?.success === false) {
-        setError(res?.message || "That code did not work");
+        const isTimeout = Boolean((res as { isTimeout?: boolean })?.isTimeout);
+        setCanRetry(isTimeout);
+        setError(
+          res?.message ||
+            (isTimeout
+              ? "Verification timed out. Please tap Retry to confirm."
+              : "That code did not work")
+        );
         return;
       }
       toast.success("Delivered. The order is closed.");
       onCompleted?.();
       onCancel();
     } catch (err) {
+      setCanRetry(true);
       setError(err instanceof Error ? err.message : "The delivery could not be closed");
     } finally {
       setIsSubmitting(false);
@@ -119,6 +130,7 @@ function CompleteForm({
               phone and come back up from `sm`. */}
           <input
             autoFocus
+            disabled={isSubmitting}
             inputMode="numeric"
             autoComplete="one-time-code"
             maxLength={6}
@@ -126,10 +138,11 @@ function CompleteForm({
             onChange={(event) => {
               setCode(event.target.value.replace(/\D/g, "").slice(0, 6));
               setError("");
+              setCanRetry(false);
             }}
             placeholder="••••••"
             aria-label="Delivery verification code"
-            className="w-full min-w-0 text-center tracking-[0.3em] sm:tracking-[0.6em] text-xl sm:text-2xl font-extrabold py-3 bg-[var(--surface-alt)] border border-[var(--border-color)] rounded-2xl text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-flat)]/30 focus:border-[var(--brand-flat)]"
+            className="w-full min-w-0 text-center tracking-[0.3em] sm:tracking-[0.6em] text-xl sm:text-2xl font-extrabold py-3 bg-[var(--surface-alt)] border border-[var(--border-color)] rounded-2xl text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-flat)]/30 focus:border-[var(--brand-flat)] disabled:opacity-60"
           />
 
           {error && (
@@ -152,7 +165,8 @@ function CompleteForm({
         <Button
           size="sm"
           onPress={onCancel}
-          className="h-9 px-4 rounded-xl bg-[var(--surface-alt)] border border-[var(--border-color)] text-[var(--foreground)] text-[11px] font-bold"
+          isDisabled={isSubmitting}
+          className="h-9 px-4 rounded-xl bg-[var(--surface-alt)] border border-[var(--border-color)] text-[var(--foreground)] text-[11px] font-bold disabled:opacity-50"
         >
           Not yet
         </Button>
@@ -170,7 +184,7 @@ function CompleteForm({
           ) : (
             <span className="inline-flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              Confirm delivery
+              {canRetry ? "Retry verification" : "Confirm delivery"}
             </span>
           )}
         </Button>

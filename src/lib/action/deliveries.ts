@@ -91,7 +91,9 @@ export const advanceDeliveryAction = async (
 
 /** Closes the job with the customer's code. */
 export const completeDeliveryAction = async (id: string, code: string) => {
-  return serverMutation(`/deliveries/${id}/complete`, { code });
+  return serverMutation(`/deliveries/${id}/complete`, { code }, "POST", {
+    timeoutMs: 25_000,
+  });
 };
 
 /** One position ping, sent from the rider's phone while the job is live. */

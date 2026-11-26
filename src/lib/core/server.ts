@@ -87,10 +87,12 @@ export const serverMutation = async (
   path: string,
   data: unknown = "",
   method: HttpMethod = "POST",
-  options?: { explainForbidden?: boolean }
+  options?: { explainForbidden?: boolean; timeoutMs?: number }
 ) => {
   const token = await getToken();
   if (!token) redirect("/auth/login");
+
+  const timeoutMs = options?.timeoutMs ?? REQUEST_TIMEOUT_MS;
 
   try {
     const res = await fetch(`${API_URL}${path}`, {
@@ -100,7 +102,7 @@ export const serverMutation = async (
         Authorization: `Bearer ${token}`,
       },
       body: data ? JSON.stringify(data) : undefined,
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
     });
 
     if (options?.explainForbidden && res.status === 403) {
@@ -114,7 +116,18 @@ export const serverMutation = async (
     return await handleResponse(res);
   } catch (err) {
     unstable_rethrow(err);
-    console.error("fetch failed:", (err as Error).message);
-    return { success: false, message: (err as Error).message };
+    const error = err as Error;
+    const isTimeout =
+      error?.name === "TimeoutError" ||
+      error?.name === "AbortError" ||
+      /timeout|aborted/i.test(error?.message || "");
+    console.error("fetch failed:", error?.message);
+    return {
+      success: false,
+      isTimeout,
+      message: isTimeout
+        ? "The request timed out. Please check your connection and try again."
+        : error?.message || "Request failed",
+    };
   }
 };
