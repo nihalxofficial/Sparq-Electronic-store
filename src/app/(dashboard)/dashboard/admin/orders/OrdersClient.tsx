@@ -29,13 +29,17 @@ import {
   RotateCcw,
   AlertTriangle,
   Truck,
+  Calculator,
 } from "lucide-react";
 import { toast } from "react-toastify";
 import { Order } from "@/types";
 import type { DeliveryRecord } from "@/types/delivery";
+import type { OrderFinancialBreakdown } from "@/types/financials";
 import { updateOrderStatus } from "@/lib/action/orders";
+import { getAdminOrderFinancialBreakdownAction } from "@/lib/action/financials";
 import { getOrderStatusStyle } from "@/lib/orderStatusStyles";
 import OrderStatusBadge from "@/components/shared/OrderStatusBadge";
+import OrderFinancialModal from "@/components/shared/OrderFinancialModal";
 import AssignRiderModal from "@/components/dashboard/admin/AssignRiderModal";
 import { formatOrderDate, formatOrderDateTime } from "@/lib/dateTime";
 import { useSiteSettings } from "@/context/SiteSettingsContext";
@@ -206,6 +210,26 @@ export default function OrdersClient({
   const handleOpenDetail = (order: Order) => {
     setSelectedOrder(order);
     setIsDetailOpen(true);
+  };
+
+  // Order-level financial breakdown modal
+  const [financialOrder, setFinancialOrder] = useState<OrderFinancialBreakdown | null>(null);
+  const [isFinancialOpen, setIsFinancialOpen] = useState(false);
+  const [isFinancialLoading, setIsFinancialLoading] = useState(false);
+  const [financialError, setFinancialError] = useState<string | null>(null);
+
+  const handleOpenFinancials = async (orderId: string) => {
+    setIsFinancialOpen(true);
+    setIsFinancialLoading(true);
+    setFinancialError(null);
+    setFinancialOrder(null);
+    const res = await getAdminOrderFinancialBreakdownAction(orderId);
+    if (res.ok && res.data) {
+      setFinancialOrder(res.data);
+    } else {
+      setFinancialError(res.message || "Failed to load financial breakdown");
+    }
+    setIsFinancialLoading(false);
   };
 
   // Update Status
@@ -587,14 +611,25 @@ export default function OrdersClient({
 
                       {/* Action */}
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <Button
-                          size="sm"
-                          onPress={() => handleOpenDetail(order)}
-                          className="inline-flex h-8 items-center gap-1.5 px-3.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 dark:hover:bg-[var(--accent)]/10 text-xs font-bold transition-colors cursor-pointer"
-                        >
-                          <Eye className="w-4 h-4" />
-                          <span>View</span>
-                        </Button>
+                        <div className="inline-flex items-center justify-end gap-1.5">
+                          <Button
+                            size="sm"
+                            aria-label="Order financial breakdown"
+                            onPress={() => handleOpenFinancials(order._id || order.id || "")}
+                            className="inline-flex h-8 items-center gap-1 px-2.5 rounded-xl bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/20 text-xs font-bold transition-colors cursor-pointer"
+                          >
+                            <Calculator className="w-3.5 h-3.5" />
+                            <span>Financials</span>
+                          </Button>
+                          <Button
+                            size="sm"
+                            onPress={() => handleOpenDetail(order)}
+                            className="inline-flex h-8 items-center gap-1.5 px-3.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 dark:hover:bg-[var(--accent)]/10 text-xs font-bold transition-colors cursor-pointer"
+                          >
+                            <Eye className="w-4 h-4" />
+                            <span>View</span>
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -1152,6 +1187,15 @@ export default function OrdersClient({
           if (id) handleAssigned(id, job);
           setAssignOrder(null);
         }}
+      />
+
+      <OrderFinancialModal
+        isOpen={isFinancialOpen}
+        onOpenChange={setIsFinancialOpen}
+        order={financialOrder}
+        mode="admin"
+        isLoading={isFinancialLoading}
+        error={financialError}
       />
     </div>
   );

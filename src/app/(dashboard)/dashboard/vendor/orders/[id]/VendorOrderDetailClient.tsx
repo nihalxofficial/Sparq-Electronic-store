@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Bike,
+  Calculator,
   CircleCheck,
   Clock,
   CreditCard,
@@ -19,9 +20,12 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import type { VendorOrder } from "@/types/vendor";
+import type { OrderFinancialBreakdown } from "@/types/financials";
 import { getVendorOrderStatusStyle, vendorOrderActions } from "@/lib/vendorOrderStatus";
 import { getOrderStatusStyle } from "@/lib/orderStatusStyles";
 import { updateVendorOrderStatus } from "@/lib/action/vendor";
+import { getVendorOrderFinancialBreakdownAction } from "@/lib/action/financials";
+import OrderFinancialModal from "@/components/shared/OrderFinancialModal";
 import { formatOrderDate, formatOrderMoment } from "@/lib/dateTime";
 import { formatPrice } from "@/lib/currency";
 
@@ -52,6 +56,25 @@ export default function VendorOrderDetailClient({ order, currency }: VendorOrder
   const [busy, setBusy] = useState<MoveStatus | null>(null);
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState("");
+  const [financialOrder, setFinancialOrder] = useState<OrderFinancialBreakdown | null>(null);
+  const [isFinancialOpen, setIsFinancialOpen] = useState(false);
+  const [isFinancialLoading, setIsFinancialLoading] = useState(false);
+  const [financialError, setFinancialError] = useState<string | null>(null);
+
+  const openFinancials = async () => {
+    setIsFinancialOpen(true);
+    setIsFinancialLoading(true);
+    setFinancialError(null);
+    setFinancialOrder(null);
+    const key = order.orderId || order.orderNumber || order._id;
+    const res = await getVendorOrderFinancialBreakdownAction(key);
+    if (res.ok && res.data) {
+      setFinancialOrder(res.data);
+    } else {
+      setFinancialError(res.message || "Failed to load financial breakdown");
+    }
+    setIsFinancialLoading(false);
+  };
 
   const style = getVendorOrderStatusStyle(order.status);
   const StatusIcon = style.icon;
@@ -175,15 +198,25 @@ export default function VendorOrderDetailClient({ order, currency }: VendorOrder
           </p>
         </div>
 
-        <div className="text-right">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
-            Whole order
-          </p>
-          <span
-            className={`mt-1 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${parentStyle.badge}`}
+        <div className="flex flex-col items-end gap-2">
+          <div className="text-right">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
+              Whole order
+            </p>
+            <span
+              className={`mt-1 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${parentStyle.badge}`}
+            >
+              {parentStyle.label}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={openFinancials}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 transition-colors hover:bg-emerald-500/20 cursor-pointer"
           >
-            {parentStyle.label}
-          </span>
+            <Calculator className="h-3.5 w-3.5" />
+            Financial Breakdown
+          </button>
         </div>
       </header>
 
@@ -425,6 +458,15 @@ export default function VendorOrderDetailClient({ order, currency }: VendorOrder
           </section>
         </div>
       </div>
+
+      <OrderFinancialModal
+        isOpen={isFinancialOpen}
+        onOpenChange={setIsFinancialOpen}
+        order={financialOrder}
+        mode="vendor"
+        isLoading={isFinancialLoading}
+        error={financialError}
+      />
     </div>
   );
 }

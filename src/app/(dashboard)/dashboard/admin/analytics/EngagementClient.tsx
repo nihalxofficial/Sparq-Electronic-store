@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useTransition } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Eye, Heart, MousePointerClick, Package, TrendingUp } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowUpRight, Eye, Heart, MousePointerClick, Package, RefreshCw, TrendingUp } from "lucide-react";
 import type { EngagementProductRow, ProductEngagementReport } from "@/types/vendor";
 import { formatPrice } from "@/lib/currency";
 
@@ -78,7 +79,7 @@ function ProductCell({ row, currency }: { row: EngagementProductRow; currency: s
           )}
         </span>
         <span className="block text-[10px] text-[var(--foreground-muted)]">
-          {formatPrice(row.price, currency, { showDecimals: false })}
+          {formatPrice(row.price, currency)}
         </span>
       </span>
     </div>
@@ -86,8 +87,16 @@ function ProductCell({ row, currency }: { row: EngagementProductRow; currency: s
 }
 
 export default function EngagementClient({ report, range, currency }: EngagementClientProps) {
+  const router = useRouter();
+  const [isRefreshing, startRefresh] = useTransition();
   const totals = report?.totals ?? { views: 0, clicks: 0, wishlists: 0, products: 0 };
   const clickRate = totals.views > 0 ? Math.round((totals.clicks / totals.views) * 100) : 0;
+
+  useEffect(() => {
+    const onFocus = () => startRefresh(() => router.refresh());
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [router]);
 
   return (
     <div className="space-y-5 border-t border-[var(--border-color)] pt-8">
@@ -100,7 +109,18 @@ export default function EngagementClient({ report, range, currency }: Engagement
           </p>
         </header>
 
-        <div className="flex items-center gap-1 rounded-xl bg-[var(--surface-alt)] p-1">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => startRefresh(() => router.refresh())}
+            disabled={isRefreshing}
+            title="Refresh engagement counts"
+            className="inline-flex items-center gap-1 rounded-xl border border-[var(--border-color)] bg-[var(--surface-elevated)] px-2.5 py-1.5 text-[11px] font-semibold text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors cursor-pointer disabled:opacity-60"
+          >
+            <RefreshCw className={`h-3 w-3 ${isRefreshing ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
+          <div className="flex items-center gap-1 rounded-xl bg-[var(--surface-alt)] p-1">
           {RANGE_CHOICES.map((choice) => (
             <Link
               key={choice}
@@ -114,6 +134,7 @@ export default function EngagementClient({ report, range, currency }: Engagement
               {choice}d
             </Link>
           ))}
+          </div>
         </div>
       </div>
 
@@ -162,9 +183,9 @@ export default function EngagementClient({ report, range, currency }: Engagement
       ) : (
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
           {/* Most viewed */}
-          <section className="rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] p-5 shadow-2xs">
+          <section className="min-w-0 overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] p-5 shadow-2xs">
             <div className="flex items-start justify-between gap-2">
-              <div>
+              <div className="min-w-0">
                 <h2 className="text-sm font-bold text-[var(--foreground)]">Most viewed</h2>
                 <p className="text-[11px] text-[var(--foreground-muted)]">
                   Ranked by listing opens, with what they led to
@@ -175,46 +196,48 @@ export default function EngagementClient({ report, range, currency }: Engagement
               </span>
             </div>
 
-            <table className="mt-4 w-full text-left text-[11px]">
-              <thead className="text-[10px] uppercase tracking-wider text-[var(--foreground-muted)]">
-                <tr>
-                  <th className="pb-2 font-bold">Product</th>
-                  <th className="pb-2 text-right font-bold">Views</th>
-                  <th className="pb-2 text-right font-bold">Clicks</th>
-                  <th className="pb-2 text-right font-bold">Saved</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--border-color)]">
-                {report.top.map((row, index) => (
-                  <tr key={row.id}>
-                    <td className="py-2">
-                      <div className="flex items-center gap-2">
-                        <span className="w-3 shrink-0 text-[10px] font-bold text-[var(--foreground-muted)]">
-                          {index + 1}
-                        </span>
-                        <ProductCell row={row} currency={currency} />
-                      </div>
-                    </td>
-                    <td className="py-2 text-right font-bold text-[var(--foreground)]">
-                      {row.views.toLocaleString()}
-                    </td>
-                    <td className="py-2 text-right text-[var(--foreground-muted)]">
-                      {row.clicks.toLocaleString()}
-                      <span className="ml-1 text-[9px]">({row.clickRate}%)</span>
-                    </td>
-                    <td className="py-2 text-right text-[var(--foreground-muted)]">
-                      {row.wishlists.toLocaleString()}
-                    </td>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[360px] text-left text-[11px]">
+                <thead className="text-[10px] uppercase tracking-wider text-[var(--foreground-muted)]">
+                  <tr>
+                    <th className="pb-2 pr-3 font-bold">Product</th>
+                    <th className="pb-2 px-2 text-right font-bold whitespace-nowrap">Views</th>
+                    <th className="pb-2 px-2 text-right font-bold whitespace-nowrap">Clicks</th>
+                    <th className="pb-2 pl-2 text-right font-bold whitespace-nowrap">Saved</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-[var(--border-color)]">
+                  {report.top.map((row, index) => (
+                    <tr key={row.id}>
+                      <td className="py-2 pr-3 max-w-[200px]">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="w-3 shrink-0 text-[10px] font-bold text-[var(--foreground-muted)]">
+                            {index + 1}
+                          </span>
+                          <ProductCell row={row} currency={currency} />
+                        </div>
+                      </td>
+                      <td className="py-2 px-2 text-right font-bold text-[var(--foreground)] whitespace-nowrap">
+                        {row.views.toLocaleString()}
+                      </td>
+                      <td className="py-2 px-2 text-right text-[var(--foreground-muted)] whitespace-nowrap">
+                        {row.clicks.toLocaleString()}
+                        <span className="ml-1 text-[9px]">({row.clickRate}%)</span>
+                      </td>
+                      <td className="py-2 pl-2 text-right text-[var(--foreground-muted)] whitespace-nowrap">
+                        {row.wishlists.toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </section>
 
           {/* Most wishlisted */}
-          <section className="rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] p-5 shadow-2xs">
+          <section className="min-w-0 overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] p-5 shadow-2xs">
             <div className="flex items-start justify-between gap-2">
-              <div>
+              <div className="min-w-0">
                 <h2 className="flex items-center gap-1.5 text-sm font-bold text-[var(--foreground)]">
                   <Heart className="h-3.5 w-3.5 text-rose-500" />
                   On the most wishlists
@@ -234,39 +257,41 @@ export default function EngagementClient({ report, range, currency }: Engagement
                 the heart.
               </p>
             ) : (
-              <table className="mt-4 w-full text-left text-[11px]">
-                <thead className="text-[10px] uppercase tracking-wider text-[var(--foreground-muted)]">
-                  <tr>
-                    <th className="pb-2 font-bold">Product</th>
-                    <th className="pb-2 text-right font-bold">Wishlists</th>
-                    <th className="pb-2 text-right font-bold">Views</th>
-                    <th className="pb-2 text-right font-bold">Clicks</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--border-color)]">
-                  {report.topWishlisted.map((row, index) => (
-                    <tr key={row.id}>
-                      <td className="py-2">
-                        <div className="flex items-center gap-2">
-                          <span className="w-3 shrink-0 text-[10px] font-bold text-[var(--foreground-muted)]">
-                            {index + 1}
-                          </span>
-                          <ProductCell row={row} currency={currency} />
-                        </div>
-                      </td>
-                      <td className="py-2 text-right font-bold text-[var(--foreground)]">
-                        {row.wishlists.toLocaleString()}
-                      </td>
-                      <td className="py-2 text-right text-[var(--foreground-muted)]">
-                        {row.views.toLocaleString()}
-                      </td>
-                      <td className="py-2 text-right text-[var(--foreground-muted)]">
-                        {row.clicks.toLocaleString()}
-                      </td>
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full min-w-[360px] text-left text-[11px]">
+                  <thead className="text-[10px] uppercase tracking-wider text-[var(--foreground-muted)]">
+                    <tr>
+                      <th className="pb-2 pr-3 font-bold">Product</th>
+                      <th className="pb-2 px-2 text-right font-bold whitespace-nowrap">Wishlists</th>
+                      <th className="pb-2 px-2 text-right font-bold whitespace-nowrap">Views</th>
+                      <th className="pb-2 pl-2 text-right font-bold whitespace-nowrap">Clicks</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--border-color)]">
+                    {report.topWishlisted.map((row, index) => (
+                      <tr key={row.id}>
+                        <td className="py-2 pr-3 max-w-[200px]">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className="w-3 shrink-0 text-[10px] font-bold text-[var(--foreground-muted)]">
+                              {index + 1}
+                            </span>
+                            <ProductCell row={row} currency={currency} />
+                          </div>
+                        </td>
+                        <td className="py-2 px-2 text-right font-bold text-[var(--foreground)] whitespace-nowrap">
+                          {row.wishlists.toLocaleString()}
+                        </td>
+                        <td className="py-2 px-2 text-right text-[var(--foreground-muted)] whitespace-nowrap">
+                          {row.views.toLocaleString()}
+                        </td>
+                        <td className="py-2 pl-2 text-right text-[var(--foreground-muted)] whitespace-nowrap">
+                          {row.clicks.toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </section>
         </div>

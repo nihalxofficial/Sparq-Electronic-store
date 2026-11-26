@@ -59,9 +59,7 @@ export default async function VendorOverviewPage() {
 
   const planPriceLabel = plan
     ? isPaidPlan(plan)
-      ? `${formatPrice(planPrice(plan, billingCycle), currency, {
-          showDecimals: false,
-        })} / ${billingCycle === "yearly" ? "year" : "month"}`
+      ? `${formatPrice(planPrice(plan, billingCycle), currency)} / ${billingCycle === "yearly" ? "year" : "month"}`
       : "Free"
     : "—";
 

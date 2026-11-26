@@ -18,6 +18,7 @@ import {
 import { getReviewsByProductId } from "@/lib/api/reviews";
 import { COMPARE_LIMIT, useCompare } from "@/lib/compare";
 import { hasOfferDiscount } from "@/lib/offer";
+import { trackProductEngagement } from "@/lib/engagement";
 import { padCountdown, parseCountdownTarget } from "@/lib/countdown";
 import { useCountdown } from "@/hooks/useCountdown";
 import { isProductOutOfStock } from "@/lib/stock";
@@ -252,6 +253,7 @@ export default function ProductCard({
     try {
       const res = await addToCart(product.id, 1);
       if (res?.success !== false) {
+        trackProductEngagement(product.id, "click", user?.id);
         setIsInCart(true);
         setJustAdded(true);
         setTimeout(() => setJustAdded(false), 1600);
@@ -471,6 +473,7 @@ export default function ProductCard({
       <div className="relative w-full h-32 sm:h-44 md:h-48 overflow-hidden rounded-lg bg-[var(--surface-alt)] border border-[var(--border-color)]/60 backdrop-blur-xs mb-2 sm:mb-3">
         <Link
           href={`/shop/${product.slug}`}
+          onClick={() => trackProductEngagement(product.id, "click", user?.id)}
           className="relative w-full h-full block cursor-pointer"
         >
           <Image

@@ -230,7 +230,7 @@ function EngagementRow({
   const trailing = byWishlist ? row.views : row.clicks;
 
   return (
-    <li className="flex items-center gap-3 py-2.5">
+    <li className="flex min-w-0 items-center gap-3 py-2.5">
       <span className="w-4 shrink-0 text-[11px] font-bold text-[var(--foreground-muted)]">
         {rank}
       </span>
@@ -256,7 +256,7 @@ function EngagementRow({
         </span>
       </span>
       <span className="shrink-0 text-[11px] font-bold text-[var(--foreground)]">
-        {formatPrice(row.price, currency, { showDecimals: false })}
+        {formatPrice(row.price, currency)}
       </span>
     </li>
   );
@@ -998,7 +998,7 @@ export default function VendorAnalyticsClient({
           </div>
 
           <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <section className="rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] p-5 shadow-2xs">
+            <section className="min-w-0 overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] p-5 shadow-2xs">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-sm font-bold text-[var(--foreground)]">Most viewed</h2>
@@ -1030,7 +1030,7 @@ export default function VendorAnalyticsClient({
               )}
             </section>
 
-            <section className="rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] p-5 shadow-2xs">
+            <section className="min-w-0 overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] p-5 shadow-2xs">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="flex items-center gap-1.5 text-sm font-bold text-[var(--foreground)]">

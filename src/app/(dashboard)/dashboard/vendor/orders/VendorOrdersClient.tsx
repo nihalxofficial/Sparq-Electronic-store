@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  Calculator,
   ChevronLeft,
   ChevronRight,
   Inbox,
@@ -15,8 +16,11 @@ import {
 } from "lucide-react";
 import { toast } from "react-toastify";
 import type { VendorOrder, VendorPagination } from "@/types/vendor";
+import type { OrderFinancialBreakdown } from "@/types/financials";
 import { getVendorOrderStatusStyle } from "@/lib/vendorOrderStatus";
 import { updateVendorOrderStatus } from "@/lib/action/vendor";
+import { getVendorOrderFinancialBreakdownAction } from "@/lib/action/financials";
+import OrderFinancialModal from "@/components/shared/OrderFinancialModal";
 import { formatOrderDate } from "@/lib/dateTime";
 import { formatPrice } from "@/lib/currency";
 
@@ -108,13 +112,42 @@ export default function VendorOrdersClient({
     }
   };
 
+  const [financialOrder, setFinancialOrder] = useState<OrderFinancialBreakdown | null>(null);
+  const [isFinancialOpen, setIsFinancialOpen] = useState(false);
+  const [isFinancialLoading, setIsFinancialLoading] = useState(false);
+  const [financialError, setFinancialError] = useState<string | null>(null);
+
+  const openFinancials = async (order: VendorOrder) => {
+    setIsFinancialOpen(true);
+    setIsFinancialLoading(true);
+    setFinancialError(null);
+    setFinancialOrder(null);
+    const key = order.orderId || order.orderNumber || order._id;
+    const res = await getVendorOrderFinancialBreakdownAction(key);
+    if (res.ok && res.data) {
+      setFinancialOrder(res.data);
+    } else {
+      setFinancialError(res.message || "Failed to load financial breakdown");
+    }
+    setIsFinancialLoading(false);
+  };
+
   return (
     <div className="space-y-5">
-      <header>
-        <h1 className="text-lg font-bold text-[var(--foreground)]">Orders</h1>
-        <p className="text-[11px] text-[var(--foreground-muted)]">
-          Your own lines from every checkout. Another seller&apos;s items never appear here.
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-bold text-[var(--foreground)]">Orders</h1>
+          <p className="text-[11px] text-[var(--foreground-muted)]">
+            Your own lines from every checkout. Another seller&apos;s items never appear here.
+          </p>
+        </div>
+        <Link
+          href="/dashboard/vendor/analytics"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-color)] bg-[var(--surface-elevated)] px-3 py-1.5 text-[11px] font-semibold text-[var(--foreground)] hover:bg-[var(--surface-alt)] transition-colors"
+        >
+          <Calculator className="h-3.5 w-3.5 text-primary" />
+          Order Financial Analytics
+        </Link>
       </header>
 
       {/* Filters */}
@@ -252,6 +285,16 @@ export default function VendorOrdersClient({
                         </button>
                       )}
 
+                      <button
+                        type="button"
+                        onClick={() => openFinancials(order)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 transition-colors hover:bg-emerald-500/20 cursor-pointer"
+                        title="Order financial breakdown"
+                      >
+                        <Calculator className="h-3 w-3" />
+                        Financials
+                      </button>
+
                       <Link
                         href={`/dashboard/vendor/orders/${order._id}`}
                         className="inline-flex items-center gap-1 rounded-lg border border-[var(--border-color)] px-2.5 py-1.5 text-[10px] font-semibold text-[var(--foreground)] transition-colors hover:bg-[var(--surface-alt)]"
@@ -303,6 +346,15 @@ export default function VendorOrdersClient({
           </div>
         </div>
       )}
+
+      <OrderFinancialModal
+        isOpen={isFinancialOpen}
+        onOpenChange={setIsFinancialOpen}
+        order={financialOrder}
+        mode="vendor"
+        isLoading={isFinancialLoading}
+        error={financialError}
+      />
     </div>
   );
 }

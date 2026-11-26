@@ -32,23 +32,13 @@ export function trackProductEngagement(
   }
 
   const url = `${API_URL}/engagement/products/${productId}`;
-  // A beacon cannot set an Authorization header, so the signed-in id travels in
-  // the body — the API uses it only to skip a seller's view of their own listing.
   const body = JSON.stringify({ type, viewerId });
-
-  try {
-    if (typeof navigator !== "undefined" && navigator.sendBeacon) {
-      navigator.sendBeacon(url, new Blob([body], { type: "application/json" }));
-      return;
-    }
-  } catch {
-    // Fall through to fetch.
-  }
 
   void fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body,
     keepalive: true,
+    credentials: "include",
   }).catch(() => {});
 }
