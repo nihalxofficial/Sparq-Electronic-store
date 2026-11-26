@@ -40,6 +40,7 @@ type ProductRow = {
   id?: unknown;
   title?: string;
   price?: number;
+  vendorId?: unknown;
   categoryId?: { _id?: unknown; id?: unknown } | string | null;
 };
 
@@ -48,6 +49,7 @@ const asProductOptions = (payload: unknown): CouponProductOption[] => {
   if (!Array.isArray(rows)) return [];
 
   return rows
+    .filter((raw) => !(raw as ProductRow).vendorId)
     .map((raw) => {
       const row = raw as ProductRow;
       const category = row.categoryId;
@@ -97,9 +99,8 @@ export default async function AdminCouponsPage({ searchParams }: AdminCouponsPag
   const [list, categoriesRes, productsRes, settingsRes] = await Promise.all([
     getCoupons({ owner, status, search, page, limit: 20 }),
     editorOpen ? getCategories() : Promise.resolve(null),
-    // The whole catalogue, so the editor can tick a category's products and
-    // search locally. The picker filters in the browser.
-    editorOpen ? getProducts({ limit: 1000 }) : Promise.resolve(null),
+    // Only platform/admin-owned products, so admin coupons never target vendor stock.
+    editorOpen ? getProducts({ limit: 1000 }, { admin: true }) : Promise.resolve(null),
     getSiteSettings(),
   ]);
 

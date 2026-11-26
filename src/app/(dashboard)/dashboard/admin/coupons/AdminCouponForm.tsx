@@ -433,7 +433,7 @@ export default function AdminCouponForm({
         <p className={hintClass}>
           {chosenCategories.size === 0
             ? "None picked, so no category is covered by name."
-            : `${chosenCategories.size} picked — each one covers every product in that category, now and as new products are added. A line qualifies through either list.`}
+            : `${chosenCategories.size} picked — covers your own store products in those categories (vendor products are excluded).`}
         </p>
 
         {categories.length === 0 ? (
