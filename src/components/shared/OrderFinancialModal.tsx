@@ -279,84 +279,156 @@ export default function OrderFinancialModal({
                     </div>
                   </div>
 
-                  {/* 3. Product-Level Calculation Table */}
-                  <div className="space-y-2.5">
+                  {/* 3. Owner-Grouped Calculations (Admin vs Each Vendor) */}
+                  <div className="space-y-4">
                     <h3 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-                      <Package className="w-3.5 h-3.5" /> Product-Level Calculations ({order.items.length})
+                      <Package className="w-3.5 h-3.5" /> Breakdown by Owner ({order.items.length} item{order.items.length === 1 ? "" : "s"})
                     </h3>
-                    <div className="overflow-x-auto rounded-2xl border border-[var(--border-color)]">
-                      <table className="w-full text-left border-collapse text-[11px]">
-                        <thead>
-                          <tr className="border-b border-[var(--border-color)] bg-[var(--surface-alt)] text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
-                            <th className="py-2.5 px-3">Product</th>
-                            <th className="py-2.5 px-2 text-right">Qty</th>
-                            <th className="py-2.5 px-2 text-right">Orig.</th>
-                            <th className="py-2.5 px-2 text-right">After Disc.</th>
-                            {(mode === "admin" || order.couponDiscount > 0) && (
-                              <th className="py-2.5 px-2 text-right">Coupon</th>
+
+                    {(order.ownerGroups && order.ownerGroups.length > 0
+                      ? order.ownerGroups
+                      : [
+                          {
+                            ownerKey: "all",
+                            ownerType: mode,
+                            ownerLabel: mode === "vendor" ? "Your Store" : "Order Items",
+                            itemsCount: order.items.length,
+                            originalTotal: order.originalTotalProductPrice,
+                            soldTotal: order.soldSubtotal,
+                            couponDiscount: order.couponDiscount,
+                            pointsDiscount: order.pointsDiscount,
+                            customerPaid: order.finalCustomerPaid,
+                            totalCost: order.totalCost,
+                            platformCommission: order.platformCommissionTotal,
+                            riderPayout: order.riderPayout,
+                            netProfit: order.expectedProfitWithDiscounts,
+                            items: order.items,
+                          },
+                        ]
+                    ).map((group) => (
+                      <div
+                        key={group.ownerKey}
+                        className="rounded-2xl border border-[var(--border-color)] overflow-hidden"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2 bg-[var(--surface-alt)] px-4 py-2.5 border-b border-[var(--border-color)]">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                                group.ownerType === "admin"
+                                  ? "bg-primary/15 text-primary"
+                                  : "bg-indigo-500/15 text-indigo-600 dark:text-indigo-300"
+                              }`}
+                            >
+                              {group.ownerType === "admin" ? "Admin" : "Vendor"}
+                            </span>
+                            <span className="text-xs font-bold text-[var(--foreground)]">
+                              {group.ownerLabel}
+                            </span>
+                            <span className="text-[10px] text-[var(--foreground-muted)]">
+                              ({group.itemsCount} item{group.itemsCount === 1 ? "" : "s"})
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-3 text-[11px]">
+                            <span className="text-[var(--foreground-muted)]">
+                              Sold: <strong className="text-[var(--foreground)]">{money(group.soldTotal)}</strong>
+                            </span>
+                            {group.couponDiscount > 0 && (
+                              <span className="text-amber-600 dark:text-amber-400">
+                                Coupon: <strong>-{money(group.couponDiscount)}</strong>
+                              </span>
                             )}
-                            {mode === "admin" && <th className="py-2.5 px-2 text-right">Points</th>}
-                            <th className="py-2.5 px-2 text-right">Paid</th>
-                            <th className="py-2.5 px-2 text-right">Cost</th>
-                            <th className="py-2.5 px-2 text-right">Comm.</th>
-                            {(mode === "admin" || order.vendorRiderPayout > 0) && (
-                              <th className="py-2.5 px-2 text-right">Rider</th>
+                            {group.platformCommission > 0 && (
+                              <span className="text-[var(--foreground-muted)]">
+                                Comm: <strong className="text-[var(--foreground)]">{money(group.platformCommission)}</strong>
+                              </span>
                             )}
-                            <th className="py-2.5 px-2 text-right">P/L (No Disc.)</th>
-                            <th className="py-2.5 px-3 text-right">P/L (Net)</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-[var(--border-color)]/60">
-                          {order.items.map((item, idx) => (
-                            <tr key={`${item.productId}-${idx}`} className="hover:bg-[var(--surface-alt)]/40">
-                              <td className="py-2.5 px-3 min-w-[160px]">
-                                <p className="font-bold text-[var(--foreground)] line-clamp-1">{item.title}</p>
-                                {mode === "admin" && (
-                                  <p className="text-[10px] text-[var(--foreground-muted)]">{item.ownerLabel}</p>
+                            <span>
+                              Owner Net P/L:{" "}
+                              <strong className={profitTone(group.netProfit)}>
+                                {money(group.netProfit)}
+                              </strong>
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse text-[11px]">
+                            <thead>
+                              <tr className="border-b border-[var(--border-color)] bg-[var(--surface-alt)]/40 text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
+                                <th className="py-2 px-3">Product</th>
+                                <th className="py-2 px-2 text-right">Qty</th>
+                                <th className="py-2 px-2 text-right">Orig.</th>
+                                <th className="py-2 px-2 text-right">Sold</th>
+                                {(mode === "admin" || group.couponDiscount > 0) && (
+                                  <th className="py-2 px-2 text-right">Coupon</th>
                                 )}
-                              </td>
-                              <td className="py-2.5 px-2 text-right font-mono">{item.quantity}</td>
-                              <td className="py-2.5 px-2 text-right">{money(item.originalTotal)}</td>
-                              <td className="py-2.5 px-2 text-right">{money(item.soldTotal)}</td>
-                              {(mode === "admin" || order.couponDiscount > 0) && (
-                                <td className="py-2.5 px-2 text-right text-amber-600 dark:text-amber-400">
-                                  -{money(item.couponDiscountAllocated)}
-                                </td>
-                              )}
-                              {mode === "admin" && (
-                                <td className="py-2.5 px-2 text-right text-amber-600 dark:text-amber-400">
-                                  -{money(item.pointsValueAllocated)}
-                                </td>
-                              )}
-                              <td className="py-2.5 px-2 text-right font-bold">{money(item.finalCustomerPaid)}</td>
-                              <td className="py-2.5 px-2 text-right">{money(item.totalCost)}</td>
-                              <td className="py-2.5 px-2 text-right">
-                                {money(item.platformCommission)}
-                                {item.commissionPercent > 0 && (
-                                  <span className="block text-[9px] text-[var(--foreground-muted)]">
-                                    ({item.commissionPercent}%)
-                                  </span>
+                                {mode === "admin" && group.pointsDiscount > 0 && (
+                                  <th className="py-2 px-2 text-right">Points</th>
                                 )}
-                              </td>
-                              {(mode === "admin" || order.vendorRiderPayout > 0) && (
-                                <td className="py-2.5 px-2 text-right">
-                                  {money(item.riderPayoutShare)}
-                                  <span className="block text-[9px] text-[var(--foreground-muted)]">
-                                    {item.riderPayoutPayer}
-                                  </span>
-                                </td>
-                              )}
-                              <td className={`py-2.5 px-2 text-right font-bold ${profitTone(item.profitBeforeDiscounts)}`}>
-                                {money(item.profitBeforeDiscounts)}
-                              </td>
-                              <td className={`py-2.5 px-3 text-right font-extrabold ${profitTone(item.profitAfterDiscounts)}`}>
-                                {money(item.profitAfterDiscounts)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                                <th className="py-2 px-2 text-right">Paid</th>
+                                <th className="py-2 px-2 text-right">Cost</th>
+                                {group.platformCommission > 0 && (
+                                  <th className="py-2 px-2 text-right">Comm.</th>
+                                )}
+                                {(mode === "admin" || group.riderPayout > 0) && (
+                                  <th className="py-2 px-2 text-right">Rider</th>
+                                )}
+                                <th className="py-2 px-2 text-right">P/L (No Disc.)</th>
+                                <th className="py-2 px-3 text-right">P/L (Net)</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[var(--border-color)]/60">
+                              {group.items.map((item, idx) => (
+                                <tr key={`${item.productId}-${idx}`} className="hover:bg-[var(--surface-alt)]/40">
+                                  <td className="py-2.5 px-3 min-w-[160px]">
+                                    <p className="font-bold text-[var(--foreground)] line-clamp-1">{item.title}</p>
+                                  </td>
+                                  <td className="py-2.5 px-2 text-right font-mono">{item.quantity}</td>
+                                  <td className="py-2.5 px-2 text-right">{money(item.originalTotal)}</td>
+                                  <td className="py-2.5 px-2 text-right">{money(item.soldTotal)}</td>
+                                  {(mode === "admin" || group.couponDiscount > 0) && (
+                                    <td className="py-2.5 px-2 text-right text-amber-600 dark:text-amber-400">
+                                      -{money(item.couponDiscountAllocated)}
+                                    </td>
+                                  )}
+                                  {mode === "admin" && group.pointsDiscount > 0 && (
+                                    <td className="py-2.5 px-2 text-right text-amber-600 dark:text-amber-400">
+                                      -{money(item.pointsValueAllocated)}
+                                    </td>
+                                  )}
+                                  <td className="py-2.5 px-2 text-right font-bold">{money(item.finalCustomerPaid)}</td>
+                                  <td className="py-2.5 px-2 text-right">{money(item.totalCost)}</td>
+                                  {group.platformCommission > 0 && (
+                                    <td className="py-2.5 px-2 text-right">
+                                      {money(item.platformCommission)}
+                                      {item.commissionPercent > 0 && (
+                                        <span className="block text-[9px] text-[var(--foreground-muted)]">
+                                          ({item.commissionPercent}%)
+                                        </span>
+                                      )}
+                                    </td>
+                                  )}
+                                  {(mode === "admin" || group.riderPayout > 0) && (
+                                    <td className="py-2.5 px-2 text-right">
+                                      {money(item.riderPayoutShare)}
+                                      <span className="block text-[9px] text-[var(--foreground-muted)]">
+                                        {item.riderPayoutPayer}
+                                      </span>
+                                    </td>
+                                  )}
+                                  <td className={`py-2.5 px-2 text-right font-bold ${profitTone(item.profitBeforeDiscounts)}`}>
+                                    {money(item.profitBeforeDiscounts)}
+                                  </td>
+                                  <td className={`py-2.5 px-3 text-right font-extrabold ${profitTone(item.profitAfterDiscounts)}`}>
+                                    {money(item.profitAfterDiscounts)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </>
               )}

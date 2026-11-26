@@ -24,6 +24,23 @@ export interface ProductFinancialRow {
   profitAfterDiscounts: number | null;
 }
 
+export interface OwnerFinancialGroup {
+  ownerKey: string;
+  ownerType: "admin" | "vendor";
+  ownerLabel: string;
+  itemsCount: number;
+  originalTotal: number;
+  soldTotal: number;
+  couponDiscount: number;
+  pointsDiscount: number;
+  customerPaid: number;
+  totalCost: number | null;
+  platformCommission: number;
+  riderPayout: number;
+  netProfit: number | null;
+  items: ProductFinancialRow[];
+}
+
 export interface OrderFinancialBreakdown {
   orderId: string;
   orderNumber: string;
@@ -60,6 +77,7 @@ export interface OrderFinancialBreakdown {
     toPlatform: number;
     productCost: number | null;
   };
+  ownerGroups?: OwnerFinancialGroup[];
   items: ProductFinancialRow[];
 }
 
