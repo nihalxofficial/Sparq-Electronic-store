@@ -51,6 +51,8 @@ export interface OrderFinancialBreakdown {
   finalCustomerPaid: number;
   expectedProfitWithoutDiscounts: number | null;
   expectedProfitWithDiscounts: number | null;
+  adminProfit?: number | null;
+  vendorProfit?: number | null;
   moneyFlow: {
     customerPaid: number;
     toVendors: number;
@@ -76,6 +78,8 @@ export interface FinancialAnalyticsSummary {
   totalCustomerPaid: number;
   totalProfitWithoutDiscounts: number;
   totalProfitWithDiscounts: number;
+  totalAdminProfit?: number;
+  totalVendorProfit?: number;
 }
 
 export interface OrderFinancialAnalyticsResponse {

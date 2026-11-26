@@ -166,28 +166,36 @@ export default function OrderFinancialModal({
                             -{money(order.totalProductDiscounts)}
                           </dd>
                         </div>
-                        <div className="flex justify-between">
-                          <dt className="text-[var(--foreground-muted)]">
-                            Coupon Discount {order.couponCode ? `(${order.couponCode})` : ""}
-                          </dt>
-                          <dd className="font-semibold text-amber-600 dark:text-amber-400">
-                            -{money(order.couponDiscount)}
-                          </dd>
-                        </div>
-                        <div className="flex justify-between">
-                          <dt className="text-[var(--foreground-muted)]">
-                            Redeemed Points ({order.pointsRedeemed} pts)
-                          </dt>
-                          <dd className="font-semibold text-amber-600 dark:text-amber-400">
-                            -{money(order.pointsDiscount)}
-                          </dd>
-                        </div>
-                        <div className="flex justify-between">
-                          <dt className="text-[var(--foreground-muted)]">Delivery Charge (Customer)</dt>
-                          <dd className="font-semibold">{money(order.deliveryCharge)}</dd>
-                        </div>
+                        {(mode === "admin" || order.couponDiscount > 0) && (
+                          <div className="flex justify-between">
+                            <dt className="text-[var(--foreground-muted)]">
+                              Coupon Discount {order.couponCode ? `(${order.couponCode})` : ""}
+                            </dt>
+                            <dd className="font-semibold text-amber-600 dark:text-amber-400">
+                              -{money(order.couponDiscount)}
+                            </dd>
+                          </div>
+                        )}
+                        {mode === "admin" && (
+                          <div className="flex justify-between">
+                            <dt className="text-[var(--foreground-muted)]">
+                              Redeemed Points ({order.pointsRedeemed} pts)
+                            </dt>
+                            <dd className="font-semibold text-amber-600 dark:text-amber-400">
+                              -{money(order.pointsDiscount)}
+                            </dd>
+                          </div>
+                        )}
+                        {mode === "admin" && (
+                          <div className="flex justify-between">
+                            <dt className="text-[var(--foreground-muted)]">Delivery Charge (Customer)</dt>
+                            <dd className="font-semibold">{money(order.deliveryCharge)}</dd>
+                          </div>
+                        )}
                         <div className="flex justify-between border-t border-[var(--border-color)] pt-1.5">
-                          <dt className="font-bold">Final Customer Paid</dt>
+                          <dt className="font-bold">
+                            {mode === "vendor" ? "Your Gross Revenue" : "Final Customer Paid"}
+                          </dt>
                           <dd className="font-extrabold text-primary">{money(order.finalCustomerPaid)}</dd>
                         </div>
                         <div className="flex justify-between pt-1">
@@ -200,14 +208,16 @@ export default function OrderFinancialModal({
                           <dt className="text-[var(--foreground-muted)]">Platform Commission</dt>
                           <dd className="font-semibold">{money(order.platformCommissionTotal)}</dd>
                         </div>
-                        <div className="flex justify-between">
-                          <dt className="text-[var(--foreground-muted)]">
-                            Rider Payout ({order.riderPayoutPayer})
-                          </dt>
-                          <dd className="font-semibold text-rose-600 dark:text-rose-400">
-                            -{money(order.riderPayout)}
-                          </dd>
-                        </div>
+                        {(mode === "admin" || order.vendorRiderPayout > 0) && (
+                          <div className="flex justify-between">
+                            <dt className="text-[var(--foreground-muted)]">
+                              Rider Payout ({order.riderPayoutPayer})
+                            </dt>
+                            <dd className="font-semibold text-rose-600 dark:text-rose-400">
+                              -{money(order.riderPayout)}
+                            </dd>
+                          </div>
+                        )}
                       </dl>
                     </div>
 
@@ -239,11 +249,26 @@ export default function OrderFinancialModal({
                             <p className="font-bold mt-0.5">{money(order.moneyFlow.toPlatform)}</p>
                           </div>
                         </div>
-                        <div className="rounded-xl bg-[var(--surface-alt)]/60 px-3 py-2 text-[11px] text-[var(--foreground-muted)] space-y-0.5">
-                          <p>
-                            <span className="font-semibold text-[var(--foreground)]">Rider Payout Split:</span>{" "}
-                            Admin: {money(order.adminRiderPayout)} · Vendor: {money(order.vendorRiderPayout)}
-                          </p>
+                        <div className="rounded-xl bg-[var(--surface-alt)]/60 px-3 py-2 text-[11px] text-[var(--foreground-muted)] space-y-1">
+                          {mode === "admin" && (
+                            <>
+                              <p>
+                                <span className="font-semibold text-[var(--foreground)]">Profit Split:</span>{" "}
+                                Admin:{" "}
+                                <span className={`font-bold ${profitTone(order.adminProfit)}`}>
+                                  {money(order.adminProfit)}
+                                </span>{" "}
+                                · Vendor:{" "}
+                                <span className={`font-bold ${profitTone(order.vendorProfit)}`}>
+                                  {money(order.vendorProfit)}
+                                </span>
+                              </p>
+                              <p>
+                                <span className="font-semibold text-[var(--foreground)]">Rider Payout Split:</span>{" "}
+                                Admin: {money(order.adminRiderPayout)} · Vendor: {money(order.vendorRiderPayout)}
+                              </p>
+                            </>
+                          )}
                           {order.missingCostCount > 0 && (
                             <p className="text-amber-600 dark:text-amber-400">
                               {order.missingCostCount} item(s) have no acquisition cost recorded.
@@ -267,12 +292,16 @@ export default function OrderFinancialModal({
                             <th className="py-2.5 px-2 text-right">Qty</th>
                             <th className="py-2.5 px-2 text-right">Orig.</th>
                             <th className="py-2.5 px-2 text-right">After Disc.</th>
-                            <th className="py-2.5 px-2 text-right">Coupon</th>
-                            <th className="py-2.5 px-2 text-right">Points</th>
+                            {(mode === "admin" || order.couponDiscount > 0) && (
+                              <th className="py-2.5 px-2 text-right">Coupon</th>
+                            )}
+                            {mode === "admin" && <th className="py-2.5 px-2 text-right">Points</th>}
                             <th className="py-2.5 px-2 text-right">Paid</th>
                             <th className="py-2.5 px-2 text-right">Cost</th>
                             <th className="py-2.5 px-2 text-right">Comm.</th>
-                            <th className="py-2.5 px-2 text-right">Rider</th>
+                            {(mode === "admin" || order.vendorRiderPayout > 0) && (
+                              <th className="py-2.5 px-2 text-right">Rider</th>
+                            )}
                             <th className="py-2.5 px-2 text-right">P/L (No Disc.)</th>
                             <th className="py-2.5 px-3 text-right">P/L (Net)</th>
                           </tr>
@@ -289,12 +318,16 @@ export default function OrderFinancialModal({
                               <td className="py-2.5 px-2 text-right font-mono">{item.quantity}</td>
                               <td className="py-2.5 px-2 text-right">{money(item.originalTotal)}</td>
                               <td className="py-2.5 px-2 text-right">{money(item.soldTotal)}</td>
-                              <td className="py-2.5 px-2 text-right text-amber-600 dark:text-amber-400">
-                                -{money(item.couponDiscountAllocated)}
-                              </td>
-                              <td className="py-2.5 px-2 text-right text-amber-600 dark:text-amber-400">
-                                -{money(item.pointsValueAllocated)}
-                              </td>
+                              {(mode === "admin" || order.couponDiscount > 0) && (
+                                <td className="py-2.5 px-2 text-right text-amber-600 dark:text-amber-400">
+                                  -{money(item.couponDiscountAllocated)}
+                                </td>
+                              )}
+                              {mode === "admin" && (
+                                <td className="py-2.5 px-2 text-right text-amber-600 dark:text-amber-400">
+                                  -{money(item.pointsValueAllocated)}
+                                </td>
+                              )}
                               <td className="py-2.5 px-2 text-right font-bold">{money(item.finalCustomerPaid)}</td>
                               <td className="py-2.5 px-2 text-right">{money(item.totalCost)}</td>
                               <td className="py-2.5 px-2 text-right">
@@ -305,12 +338,14 @@ export default function OrderFinancialModal({
                                   </span>
                                 )}
                               </td>
-                              <td className="py-2.5 px-2 text-right">
-                                {money(item.riderPayoutShare)}
-                                <span className="block text-[9px] text-[var(--foreground-muted)]">
-                                  {item.riderPayoutPayer}
-                                </span>
-                              </td>
+                              {(mode === "admin" || order.vendorRiderPayout > 0) && (
+                                <td className="py-2.5 px-2 text-right">
+                                  {money(item.riderPayoutShare)}
+                                  <span className="block text-[9px] text-[var(--foreground-muted)]">
+                                    {item.riderPayoutPayer}
+                                  </span>
+                                </td>
+                              )}
                               <td className={`py-2.5 px-2 text-right font-bold ${profitTone(item.profitBeforeDiscounts)}`}>
                                 {money(item.profitBeforeDiscounts)}
                               </td>

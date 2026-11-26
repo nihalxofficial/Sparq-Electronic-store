@@ -31,6 +31,11 @@ export default function OrderFinancialsSection({
     return `${sign}${formatPrice(Math.abs(val))}`;
   };
 
+  const showRiderCol = mode === "admin" || orders.some((o) => o.vendorRiderPayout > 0);
+  const showDiscountCol =
+    mode === "admin" ||
+    orders.some((o) => o.totalProductDiscounts + o.couponDiscount > 0);
+
   return (
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -113,7 +118,11 @@ export default function OrderFinancialsSection({
             {money(summary.totalProfitWithDiscounts)}
           </p>
           <p className="text-[10px] text-[var(--foreground-muted)]">
-            Rider payouts: {money(summary.totalRiderPayout)}
+            {mode === "admin"
+              ? `Admin: ${money(summary.totalAdminProfit)} · Vendor: ${money(summary.totalVendorProfit)}`
+              : showRiderCol
+                ? `Rider payouts: ${money(summary.totalRiderPayout)}`
+                : "After cost & commission"}
           </p>
         </Card>
       </div>
@@ -131,12 +140,17 @@ export default function OrderFinancialsSection({
                 <tr className="border-b border-[var(--border-color)] bg-[var(--surface-alt)] text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
                   <th className="py-3 px-4">Order</th>
                   <th className="py-3 px-3 text-right">Orig. Price</th>
-                  <th className="py-3 px-3 text-right">Discounts &amp; Pts</th>
-                  <th className="py-3 px-3 text-right">Customer Paid</th>
+                  {showDiscountCol && <th className="py-3 px-3 text-right">Discounts</th>}
+                  <th className="py-3 px-3 text-right">
+                    {mode === "vendor" ? "Your Gross" : "Customer Paid"}
+                  </th>
                   <th className="py-3 px-3 text-right">Cost</th>
-                  <th className="py-3 px-3 text-right">Rider (Payer)</th>
+                  {showRiderCol && <th className="py-3 px-3 text-right">Rider (Payer)</th>}
                   <th className="py-3 px-3 text-right">P/L (No Disc.)</th>
                   <th className="py-3 px-3 text-right">P/L (Net)</th>
+                  {mode === "admin" && (
+                    <th className="py-3 px-3 text-right">Admin / Vendor P/L</th>
+                  )}
                   <th className="py-3 px-4 text-right">Details</th>
                 </tr>
               </thead>
@@ -155,21 +169,25 @@ export default function OrderFinancialsSection({
                       <td className="py-3 px-3 text-right whitespace-nowrap">
                         {money(order.originalTotalProductPrice)}
                       </td>
-                      <td className="py-3 px-3 text-right whitespace-nowrap text-amber-600 dark:text-amber-400">
-                        -{money(totalDisc)}
-                      </td>
+                      {showDiscountCol && (
+                        <td className="py-3 px-3 text-right whitespace-nowrap text-amber-600 dark:text-amber-400">
+                          -{money(totalDisc)}
+                        </td>
+                      )}
                       <td className="py-3 px-3 text-right whitespace-nowrap font-bold text-primary">
                         {money(order.finalCustomerPaid)}
                       </td>
                       <td className="py-3 px-3 text-right whitespace-nowrap">
                         {money(order.totalCost)}
                       </td>
-                      <td className="py-3 px-3 text-right whitespace-nowrap">
-                        <span>{money(order.riderPayout)}</span>
-                        <span className="block text-[10px] text-[var(--foreground-muted)]">
-                          {order.riderPayoutPayer}
-                        </span>
-                      </td>
+                      {showRiderCol && (
+                        <td className="py-3 px-3 text-right whitespace-nowrap">
+                          <span>{money(order.riderPayout)}</span>
+                          <span className="block text-[10px] text-[var(--foreground-muted)]">
+                            {order.riderPayoutPayer}
+                          </span>
+                        </td>
+                      )}
                       <td
                         className={`py-3 px-3 text-right whitespace-nowrap font-bold ${
                           (order.expectedProfitWithoutDiscounts ?? 0) >= 0
@@ -188,6 +206,28 @@ export default function OrderFinancialsSection({
                       >
                         {money(order.expectedProfitWithDiscounts)}
                       </td>
+                      {mode === "admin" && (
+                        <td className="py-3 px-3 text-right whitespace-nowrap text-[11px]">
+                          <span
+                            className={`block font-bold ${
+                              (order.adminProfit ?? 0) >= 0
+                                ? "text-emerald-600 dark:text-emerald-400"
+                                : "text-rose-600 dark:text-rose-400"
+                            }`}
+                          >
+                            A: {money(order.adminProfit)}
+                          </span>
+                          <span
+                            className={`block text-[10px] font-semibold ${
+                              (order.vendorProfit ?? 0) >= 0
+                                ? "text-[var(--foreground-muted)]"
+                                : "text-rose-500"
+                            }`}
+                          >
+                            V: {money(order.vendorProfit)}
+                          </span>
+                        </td>
+                      )}
                       <td className="py-3 px-4 text-right whitespace-nowrap">
                         <button
                           type="button"

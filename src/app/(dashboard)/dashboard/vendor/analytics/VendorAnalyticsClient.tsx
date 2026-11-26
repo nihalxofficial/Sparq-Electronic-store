@@ -845,6 +845,34 @@ export default function VendorAnalyticsClient({
         </section>
       )}
 
+      {/* ── Order-Level Financial Analytics (Premium & Advanced only) ── */}
+      {report.plan.id === "free" ? (
+        <section className="rounded-2xl border border-dashed border-[var(--border-color)] bg-[var(--surface-elevated)] p-5 shadow-2xs flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <span className="rounded-xl bg-[var(--surface-alt)] p-2.5 text-[var(--foreground-muted)]">
+              <Lock className="h-4 w-4" />
+            </span>
+            <div>
+              <h2 className="text-sm font-bold text-[var(--foreground)]">
+                Order-Level Financial Analytics
+              </h2>
+              <p className="mt-0.5 text-[11px] text-[var(--foreground-muted)] max-w-xl">
+                Detailed per-order and per-product profit/loss calculations, coupon &amp; points
+                allocations, and rider payout breakdowns are available on Premium and Advanced plans.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/dashboard/vendor/subscription"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-brand-gradient px-3.5 py-2 text-[11px] font-bold text-[var(--on-grad-text)] shadow-xs"
+          >
+            Upgrade plan
+          </Link>
+        </section>
+      ) : (
+        <OrderFinancialsSection data={orderFinancials} mode="vendor" />
+      )}
+
       <div className={`grid grid-cols-1 gap-5 ${isDetailed ? "lg:grid-cols-2" : ""}`}>
         {/* ── Pipeline ── */}
         {isDetailed && (
@@ -1133,34 +1161,6 @@ export default function VendorAnalyticsClient({
           </div>
         )}
       </section>
-
-      {/* ── Order-Level Financial Analytics (Premium & Advanced only) ── */}
-      {report.plan.id === "free" ? (
-        <section className="rounded-2xl border border-dashed border-[var(--border-color)] bg-[var(--surface-elevated)] p-5 shadow-2xs flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <span className="rounded-xl bg-[var(--surface-alt)] p-2.5 text-[var(--foreground-muted)]">
-              <Lock className="h-4 w-4" />
-            </span>
-            <div>
-              <h2 className="text-sm font-bold text-[var(--foreground)]">
-                Order-Level Financial Analytics
-              </h2>
-              <p className="mt-0.5 text-[11px] text-[var(--foreground-muted)] max-w-xl">
-                Detailed per-order and per-product profit/loss calculations, coupon &amp; points
-                allocations, and rider payout breakdowns are available on Premium and Advanced plans.
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/dashboard/vendor/subscription"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-brand-gradient px-3.5 py-2 text-[11px] font-bold text-[var(--on-grad-text)] shadow-xs"
-          >
-            Upgrade plan
-          </Link>
-        </section>
-      ) : (
-        <OrderFinancialsSection data={orderFinancials} mode="vendor" />
-      )}
 
       {/* ── Delivery fee: who pays the courier ── */}
       <section className="rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] p-5 shadow-2xs">
