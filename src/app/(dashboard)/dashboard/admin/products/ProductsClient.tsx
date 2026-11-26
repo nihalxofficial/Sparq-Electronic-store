@@ -506,13 +506,13 @@ export default function ProductsClient({
     const id = p.id || (p as any)._id;
     if (!id || archivingId) return;
 
-    // A seller's row is answered on the review desk, never shelved from here.
-    if (isSellerListing(p)) {
-      toast.error("A seller's listing is managed from the review queue.");
+    const isArchived = (p as any).vendorProductStatus === "archived";
+    const archivedBy = (p as any).archivedBy as "admin" | "vendor" | null | undefined;
+    if (isArchived && archivedBy === "vendor") {
+      toast.error("This product was archived by its vendor. Only the vendor can unarchive it.");
       return;
     }
 
-    const isArchived = (p as any).vendorProductStatus === "archived";
     setArchivingId(id);
 
     try {
@@ -527,6 +527,7 @@ export default function ProductsClient({
                 ...prod,
                 vendorProductStatus: isArchived ? "published" : "archived",
                 isVisible: isArchived,
+                archivedBy: isArchived ? null : "admin",
               };
             }
             return prod;
@@ -1011,37 +1012,47 @@ export default function ProductsClient({
                               </button>
                             </>
                           )}
+                          {(() => {
+                            const isArchived = (product as any).vendorProductStatus === "archived";
+                            const archivedByVendor = isArchived && (product as any).archivedBy === "vendor";
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleArchive(product)}
+                                disabled={archivingId === (product.id || (product as any)._id) || archivedByVendor}
+                                className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors bg-transparent ${
+                                  archivedByVendor
+                                    ? "text-[var(--foreground-muted)] opacity-40 cursor-not-allowed"
+                                    : isArchived
+                                      ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 cursor-pointer"
+                                      : "text-[var(--foreground-muted)] hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50 cursor-pointer"
+                                }`}
+                                title={
+                                  archivedByVendor
+                                    ? "Archived by vendor — only the vendor can unarchive"
+                                    : isArchived
+                                      ? "Unarchive Product"
+                                      : "Archive Product"
+                                }
+                              >
+                                {isArchived ? (
+                                  <ArchiveRestore className="w-[18px] h-[18px]" />
+                                ) : (
+                                  <Archive className="w-[18px] h-[18px]" />
+                                )}
+                              </button>
+                            );
+                          })()}
                           {!isSellerListing(product) && (
                             <button
                               type="button"
-                              onClick={() => handleToggleArchive(product)}
-                              disabled={archivingId === (product.id || (product as any)._id)}
-                              className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors cursor-pointer bg-transparent ${
-                                (product as any).vendorProductStatus === "archived"
-                                  ? "text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/50"
-                                  : "text-[var(--foreground-muted)] hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50"
-                              }`}
-                              title={
-                                (product as any).vendorProductStatus === "archived"
-                                  ? "Unarchive Product"
-                                  : "Archive Product"
-                              }
+                              onClick={() => handleOpenDelete(product)}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--foreground-muted)] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer bg-transparent"
+                              title="Delete Product"
                             >
-                              {(product as any).vendorProductStatus === "archived" ? (
-                                <ArchiveRestore className="w-[18px] h-[18px]" />
-                              ) : (
-                                <Archive className="w-[18px] h-[18px]" />
-                              )}
+                              <Trash2 className="w-[18px] h-[18px]" />
                             </button>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => handleOpenDelete(product)}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--foreground-muted)] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors cursor-pointer bg-transparent"
-                            title="Delete Product"
-                          >
-                            <Trash2 className="w-[18px] h-[18px]" />
-                          </button>
                         </div>
                       </td>
                     </tr>

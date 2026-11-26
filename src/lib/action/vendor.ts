@@ -238,6 +238,15 @@ export const archiveVendorProduct = async (productId: string) => {
   return serverMutation(`/vendor-products/${productId}`, {}, "DELETE");
 };
 
+/** Permanently deletes a vendor's own product. */
+export const deleteVendorProduct = async (productId: string) => {
+  const user = await getUserSession();
+  if (!isVendorRole(user)) {
+    return { success: false as const, message: "Vendor access required." };
+  }
+  return serverMutation(`/vendor-products/${productId}/permanent`, {}, "DELETE");
+};
+
 /** Unarchives a product by filing it for review again. */
 export const unarchiveVendorProduct = async (productId: string) => {
   const user = await getUserSession();

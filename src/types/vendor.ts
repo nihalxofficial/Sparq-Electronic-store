@@ -362,6 +362,8 @@ export interface VendorProduct {
   vendorProductStatus?: string;
   /** The admin's words when a submission was sent back; the seller fixes it. */
   vendorRejectionReason?: string;
+  archivedBy?: "admin" | "vendor" | null;
+  archivedAt?: string | null;
   /** When the seller last filed it for review. */
   submittedAt?: string | null;
   categoryId?: { name: string; slug: string; _id?: string; id?: string } | string;

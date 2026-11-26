@@ -26,6 +26,7 @@ import {
   Layers,
   Sparkle,
   Send,
+  Trash2,
 } from "lucide-react";
 import {
   Modal,
@@ -41,6 +42,7 @@ import type { Category, SubCategory } from "@/types";
 import { getVendorProductStatusStyle } from "@/lib/vendorProductStatus";
 import {
   archiveVendorProduct,
+  deleteVendorProduct,
   submitVendorProduct,
   unarchiveVendorProduct,
   updateVendorProduct,
@@ -114,6 +116,27 @@ export default function VendorProductsClient({
   // A review move (submit or withdraw) is its own busy flag, so the archive
   // buttons stay usable while a submission is in flight.
   const [reviewing, setReviewing] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<VendorProduct | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      const res = await deleteVendorProduct(deleteTarget._id);
+      if (res?.success === false) {
+        toast.error(res.message || "Could not delete product");
+        return;
+      }
+      toast.success("Product deleted");
+      setDeleteTarget(null);
+      router.refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Error deleting product");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // ── Edit Modal State ──
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -657,20 +680,30 @@ export default function VendorProductsClient({
                     )}
 
                     {product.vendorProductStatus === "archived" ? (
-                      <button
-                        type="button"
-                        onClick={() => unarchive(product)}
-                        disabled={archiving === product._id}
-                        className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/30 px-2 py-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 transition-colors hover:bg-emerald-100 dark:hover:bg-emerald-900/40 disabled:opacity-50 cursor-pointer"
-                        title="File it for review again"
-                      >
-                        {archiving === product._id ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          <ArchiveRestore className="h-3 w-3" />
-                        )}
-                        Unarchive
-                      </button>
+                      product.archivedBy === "admin" ? (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-lg border border-rose-500/30 bg-rose-50/50 dark:bg-rose-950/20 px-2 py-1.5 text-[10px] font-semibold text-rose-600 dark:text-rose-400 opacity-75 cursor-not-allowed"
+                          title="Archived by an administrator — only an admin can unarchive this product"
+                        >
+                          <Archive className="h-3 w-3" />
+                          Archived by Admin
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => unarchive(product)}
+                          disabled={archiving === product._id}
+                          className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/30 px-2 py-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 transition-colors hover:bg-emerald-100 dark:hover:bg-emerald-900/40 disabled:opacity-50 cursor-pointer"
+                          title="File it for review again"
+                        >
+                          {archiving === product._id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <ArchiveRestore className="h-3 w-3" />
+                          )}
+                          Unarchive
+                        </button>
+                      )
                     ) : (
                       <button
                         type="button"
@@ -686,6 +719,16 @@ export default function VendorProductsClient({
                         Archive
                       </button>
                     )}
+
+                    <button
+                      type="button"
+                      onClick={() => setDeleteTarget(product)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-[var(--border-color)] px-2 py-1.5 text-[10px] font-semibold text-rose-500 transition-colors hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                      title="Delete product"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Delete
+                    </button>
                   </div>
                 </li>
               );
@@ -1093,6 +1136,52 @@ export default function VendorProductsClient({
                   className="px-5 py-2 rounded-xl bg-primary text-white text-xs font-bold shadow-sm hover:opacity-90 transition cursor-pointer"
                 >
                   {isUpdating ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </Modal.Dialog>
+          </Modal.Container>
+        </Modal.Backdrop>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setDeleteTarget(null);
+        }}
+      >
+        <Modal.Backdrop>
+          <Modal.Container size="sm">
+            <Modal.Dialog className="bg-[var(--surface-elevated)] border border-[var(--border-color)] rounded-3xl p-6 shadow-2xl space-y-4 text-[var(--foreground)]">
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-500 flex items-center justify-center mx-auto border border-rose-100 dark:border-rose-900/40">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="text-center space-y-1.5">
+                <h3 className="text-base font-bold text-[var(--foreground)]">Delete Product?</h3>
+                <p className="text-xs text-[var(--foreground-muted)]">
+                  Are you sure you want to permanently delete{" "}
+                  <span className="font-bold text-[var(--foreground)]">
+                    &ldquo;{deleteTarget?.title}&rdquo;
+                  </span>
+                  ? This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <Button
+                  type="button"
+                  onPress={() => setDeleteTarget(null)}
+                  isDisabled={isDeleting}
+                  className="px-4 py-2 rounded-xl border border-[var(--border-color)] bg-[var(--surface-alt)] text-xs font-bold text-[var(--foreground)] cursor-pointer"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onPress={handleConfirmDelete}
+                  isDisabled={isDeleting}
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm cursor-pointer"
+                >
+                  {isDeleting ? "Deleting..." : "Yes, Delete"}
                 </Button>
               </div>
             </Modal.Dialog>
