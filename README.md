@@ -628,6 +628,12 @@ Cancelling a paid order marks its payment **refunded**.
 
 ## Recent Changes
 
+- **Express shipping:** free shipping is the standard method's perk only — express is always charged, even when the basket clears the free-shipping threshold.
+- **Optional warranty:** an empty warranty period saves as No warranty with no error, and a product with no warranty shows no warranty rows.
+- **Refund on any cancellation:** cancelling an order by anyone marks its payment refunded, not failed.
+- **Frozen order figures:** commission, delivery cover and per-line cost are frozen at checkout, so a plan or cost change never re-prices a completed order.
+- **Notifications don't delay an order:** the feed and mail fan-out runs after the response, so a slow inbox can't make a placed order look like a failure.
+- **Clearer edit refusals:** a refused product save shows the server's reason, the admin can edit any listing, and a clashing slug answers 409.
 - **Checkout:** the wallet fields are gone — pick a payment method on top, and pressing **Place Order** runs the animated gateway automatically and places the order.
 - **One product edit modal:** the admin and the seller now share a single edit form, so a seller can set warranty, specifications, discount and offer dates exactly like the admin.
 - **Order-level financial analytics & modal:** Admin and Premium/Advanced vendors get per-order and per-product financial breakdowns (original price, discounts, coupon/points allocations, cost, commission, rider payout responsibility, Admin/Vendor profit split, and before/after discount P/L) in a responsive HeroUI v3 modal, with strict backend plan gating and vendor isolation.
