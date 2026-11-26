@@ -3,9 +3,11 @@ import { getProductEngagement, asEngagement } from "@/lib/api/engagement";
 import { getVendorDesk, asVendorDesk } from "@/lib/api/vendorDesk";
 import { getSiteSettings } from "@/lib/api/siteSettings";
 import { getAdminDashboardData } from "@/lib/adminDashboardData";
+import { getAdminOrderFinancials } from "@/lib/api/financials";
 import SalesAnalyticsClient from "./SalesAnalyticsClient";
 import VendorDeskClient from "./VendorDeskClient";
 import EngagementClient from "./EngagementClient";
+import OrderFinancialsSection from "@/components/shared/OrderFinancialsSection";
 
 export const dynamic = "force-dynamic";
 
@@ -34,11 +36,12 @@ export default async function AdminAnalyticsPage({ searchParams }: AdminAnalytic
   const requestedMonths = Number(params?.months);
   const months = MONTH_CHOICES.includes(requestedMonths) ? requestedMonths : 6;
 
-  const [data, engagementRes, settingsRes, deskRes] = await Promise.all([
+  const [data, engagementRes, settingsRes, deskRes, orderFinancials] = await Promise.all([
     getAdminDashboardData(),
     getProductEngagement({ range, limit: 20 }),
     getSiteSettings(),
     getVendorDesk({ months }),
+    getAdminOrderFinancials({ days: range, limit: 50 }),
   ]);
 
   return (
@@ -58,6 +61,8 @@ export default async function AdminAnalyticsPage({ searchParams }: AdminAnalytic
         yearlyProfitData={data.yearlyProfitData}
         topSellingByPeriod={data.topSellingByPeriod}
       />
+
+      <OrderFinancialsSection data={orderFinancials} mode="admin" />
 
       <VendorDeskClient report={asVendorDesk(deskRes, months)} months={months} />
 
