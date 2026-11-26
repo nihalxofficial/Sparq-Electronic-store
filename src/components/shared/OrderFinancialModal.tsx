@@ -369,8 +369,7 @@ export default function OrderFinancialModal({
                                 {group.platformCommission > 0 && (
                                   <th className="py-2 px-2 text-right">Comm.</th>
                                 )}
-                                <th className="py-2 px-2 text-right">P/L (No Disc.)</th>
-                                <th className="py-2 px-3 text-right">P/L (Net)</th>
+                                <th className="py-2 px-3 text-right">Net P/L</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-[var(--border-color)]/60">
@@ -404,9 +403,6 @@ export default function OrderFinancialModal({
                                       )}
                                     </td>
                                   )}
-                                  <td className={`py-2.5 px-2 text-right font-bold ${profitTone(item.profitBeforeDiscounts)}`}>
-                                    {money(item.profitBeforeDiscounts)}
-                                  </td>
                                   <td className={`py-2.5 px-3 text-right font-extrabold ${profitTone(item.profitAfterDiscounts)}`}>
                                     {money(item.profitAfterDiscounts)}
                                   </td>
