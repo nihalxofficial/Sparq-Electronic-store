@@ -525,10 +525,13 @@ export default function CheckoutClient({
   // so it reaches the newest submitOrder through a ref instead of a dependency.
   const submitOrderRef = useRef(submitOrder);
   const pendingTransactionIdRef = useRef<string>("");
+  const walletPlacedRef = useRef(false);
   submitOrderRef.current = submitOrder;
 
-  // The gateway finished: place the order with the receipt it produced.
+  // The gateway finished: place the order once, with the receipt it produced.
   const handleWalletPaymentSuccess = useCallback(async () => {
+    if (walletPlacedRef.current) return;
+    walletPlacedRef.current = true;
     setIsPaymentModalOpen(false);
     await submitOrderRef.current(pendingTransactionIdRef.current);
   }, []);
@@ -564,6 +567,7 @@ export default function CheckoutClient({
       : buildDemoWalletPhone();
 
     pendingTransactionIdRef.current = buildDemoTransactionId(selectedPaymentMethod);
+    walletPlacedRef.current = false;
     setWalletPhone(phone);
     setWalletTransactionId(pendingTransactionIdRef.current);
     setIsPaymentModalOpen(true);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Check,
   CheckCircle2,
@@ -62,6 +62,15 @@ export default function WalletPaymentModal({
   const isComplete = finishedSteps >= PAYMENT_STEPS.length;
   const progress = PROGRESS_BY_STEP[Math.min(finishedSteps, PROGRESS_BY_STEP.length - 1)];
 
+  // Hand the successful payment back exactly once, whether the timer beats the
+  // customer to the button or not — a double call would place two orders.
+  const doneRef = useRef(false);
+  const finish = useCallback(() => {
+    if (doneRef.current) return;
+    doneRef.current = true;
+    onSuccess();
+  }, [onSuccess]);
+
   useEffect(() => {
     // Move through the steps one by one so the modal feels like a live gateway.
     const timers = PAYMENT_STEPS.map((_, index) =>
@@ -76,13 +85,11 @@ export default function WalletPaymentModal({
     );
 
     // Then hand the successful payment back to the checkout page.
-    timers.push(
-      setTimeout(() => onSuccess(), STEP_DURATION_MS * PAYMENT_STEPS.length + 200)
-    );
+    timers.push(setTimeout(() => finish(), STEP_DURATION_MS * PAYMENT_STEPS.length + 200));
 
     return () => timers.forEach((timer) => clearTimeout(timer));
-    // onSuccess must be a stable callback - the checkout page uses useCallback.
-  }, [onSuccess]);
+    // finish is stable while onSuccess is - the checkout page uses useCallback.
+  }, [finish]);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto flex items-start justify-center p-4 sm:items-center bg-[var(--surface)]/75 animate-in fade-in duration-150">
@@ -167,7 +174,7 @@ export default function WalletPaymentModal({
 
               <button
                 type="button"
-                onClick={onClose}
+                onClick={finish}
                 className={`w-full h-10 rounded-xl text-white text-xs font-bold transition-colors cursor-pointer ${brandButtonClass}`}
               >
                 Continue to checkout
