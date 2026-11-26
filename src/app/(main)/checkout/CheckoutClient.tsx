@@ -481,10 +481,26 @@ export default function CheckoutClient({
     try {
       const response = await createOrder(orderData);
 
-      // The backend returns { success, data: <order document>, message }
-      const createdOrder = response?.data as { _id: string } | undefined;
-      if (!createdOrder?._id) {
-        throw new Error("Order couldn't be placed..Please check cart!");
+      // A failed write carries its own reason — show that, not a generic line.
+      if (response?.success === false) {
+        throw new Error(
+          response?.message || "We couldn't place your order. Please try again."
+        );
+      }
+
+      // The backend answers { success, data: <order document>, message }. The id
+      // is `_id` on the document, with `id` as a fallback for a lean shape.
+      const createdOrder = response?.data as
+        | { _id?: string; id?: string }
+        | undefined;
+      const newOrderId = createdOrder?._id || createdOrder?.id;
+
+      // If the order was placed but the body came back without an id, do not
+      // claim it failed — send the customer straight to their orders instead.
+      if (!newOrderId) {
+        toast.success("Your order was placed! Opening your orders...");
+        router.push("/dashboard/customer/orders");
+        return;
       }
 
       // Keep the address for the next order. This runs before the redirect, but
@@ -509,7 +525,7 @@ export default function CheckoutClient({
       }
 
       toast.success("Order placed successfully! Redirecting...");
-      router.push(`/order-success/${createdOrder._id}`);
+      router.push(`/order-success/${newOrderId}`);
     } catch (err: unknown) {
       const msg =
         err instanceof Error

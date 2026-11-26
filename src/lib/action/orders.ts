@@ -7,7 +7,12 @@ import { CreateOrderPayload } from "@/types";
 export const createOrder = async (data: Omit<CreateOrderPayload, "userId">) => {
   const user = await getUserSession();
   if (!user?.id) return null;
-  return serverMutation("/orders", { ...data, userId: user.id });
+  // A checkout also fans out email and feed writes on the server, so it is given
+  // a longer budget than a plain write: a slow inbox must never make an order
+  // that was actually placed look like a failure.
+  return serverMutation("/orders", { ...data, userId: user.id }, "POST", {
+    timeoutMs: 30000,
+  });
 };
 
 export const updateOrderStatus = async (id: string, orderStatus: string) => {
