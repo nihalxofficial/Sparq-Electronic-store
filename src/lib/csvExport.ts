@@ -10,12 +10,13 @@
  * - UTF-8 BOM so Excel shows non-ASCII characters (৳, ₹, é) correctly
  */
 
+import { cleanDecimal } from "./currency";
+
 export type CsvValue = string | number | boolean | null | undefined;
 
-/** Rounds money/percentages to 2 decimals and keeps them as real numbers. */
+/** Preserves decimal precision while stripping floating-point noise. */
 export function round2(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.round(value * 100) / 100;
+  return cleanDecimal(value);
 }
 
 /**

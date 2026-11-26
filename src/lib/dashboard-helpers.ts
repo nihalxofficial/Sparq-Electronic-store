@@ -1,3 +1,4 @@
+import { cleanDecimal } from "@/lib/currency";
 import {
   StatCardItem,
   RevenueDataPoint,
@@ -561,7 +562,7 @@ export function aggregateAdminDashboard(
     const val = monthlyDataMap[m];
     return {
       month: m,
-      revenue: Math.round(val.revenue),
+      revenue: cleanDecimal(val.revenue),
       orders: val.orders,
     };
   });
@@ -608,9 +609,9 @@ export function aggregateAdminDashboard(
       price: p.price,
       investPrice: p.investPrice,
       unitsSold: p.unitsSold,
-      revenue: Math.round(p.revenue * 100) / 100,
-      cost: Math.round(p.cost * 100) / 100,
-      profit: Math.round(p.profit * 100) / 100,
+      revenue: cleanDecimal(p.revenue),
+      cost: cleanDecimal(p.cost),
+      profit: cleanDecimal(p.profit),
     }))
     .sort((a, b) => b.revenue - a.revenue)
     .slice(0, 5);
@@ -652,33 +653,33 @@ export function aggregateAdminDashboard(
   // Profit time-series arrays
   const dailyProfitData: ProfitDataPoint[] = Object.entries(dailyMap).map(([label, v]) => ({
     label,
-    revenue: Math.round(v.revenue * 100) / 100,
-    cost: Math.round(v.cost * 100) / 100,
-    profit: Math.round(v.profit * 100) / 100,
+    revenue: cleanDecimal(v.revenue),
+    cost: cleanDecimal(v.cost),
+    profit: cleanDecimal(v.profit),
     orders: v.orders,
   }));
 
   const weeklyProfitData: ProfitDataPoint[] = Object.entries(weeklyMap).map(([label, v]) => ({
     label,
-    revenue: Math.round(v.revenue * 100) / 100,
-    cost: Math.round(v.cost * 100) / 100,
-    profit: Math.round(v.profit * 100) / 100,
+    revenue: cleanDecimal(v.revenue),
+    cost: cleanDecimal(v.cost),
+    profit: cleanDecimal(v.profit),
     orders: v.orders,
   }));
 
   const monthlyProfitData: ProfitDataPoint[] = Object.entries(monthlyProfitMap).map(([label, v]) => ({
     label,
-    revenue: Math.round(v.revenue * 100) / 100,
-    cost: Math.round(v.cost * 100) / 100,
-    profit: Math.round(v.profit * 100) / 100,
+    revenue: cleanDecimal(v.revenue),
+    cost: cleanDecimal(v.cost),
+    profit: cleanDecimal(v.profit),
     orders: v.orders,
   }));
 
   const yearlyProfitData: ProfitDataPoint[] = Object.entries(yearlyMap).map(([label, v]) => ({
     label,
-    revenue: Math.round(v.revenue * 100) / 100,
-    cost: Math.round(v.cost * 100) / 100,
-    profit: Math.round(v.profit * 100) / 100,
+    revenue: cleanDecimal(v.revenue),
+    cost: cleanDecimal(v.cost),
+    profit: cleanDecimal(v.profit),
     orders: v.orders,
   }));
 
@@ -698,12 +699,12 @@ export function aggregateAdminDashboard(
    * than from every product's margin, because the fee belongs to the delivery
    * and not to any one line in the box.
    */
-  const feesPaid = Math.max(0, Math.round((riderFeesPaid || 0) * 100) / 100);
-  const totalProfit = grossProfit - feesPaid;
-  const profitMargin = totalRevenue > 0 ? Math.round((totalProfit / totalRevenue) * 100 * 10) / 10 : 0;
+  const feesPaid = Math.max(0, cleanDecimal(riderFeesPaid || 0));
+  const totalProfit = cleanDecimal(grossProfit - feesPaid);
+  const profitMargin = totalRevenue > 0 ? cleanDecimal((totalProfit / totalRevenue) * 100) : 0;
 
   // Key Performance Indicators (KPIs)
-  const avgOrderValue = billableOrdersCount > 0 ? totalRevenue / billableOrdersCount : 0;
+  const avgOrderValue = billableOrdersCount > 0 ? cleanDecimal(totalRevenue / billableOrdersCount) : 0;
   const deliverySuccessRate = orders.length > 0 ? Math.round((deliveredOrdersCount / orders.length) * 100) : 0;
 
   const kpis: AdminKPIs = {
@@ -711,9 +712,9 @@ export function aggregateAdminDashboard(
     deliverySuccessRate,
     totalProducts: products.length,
     totalTransactions: transactions.length || orders.length,
-    totalProfit: Math.round(totalProfit * 100) / 100,
-    totalCost: Math.round(totalCost * 100) / 100,
-    grossProfit: Math.round(grossProfit * 100) / 100,
+    totalProfit: cleanDecimal(totalProfit),
+    totalCost: cleanDecimal(totalCost),
+    grossProfit: cleanDecimal(grossProfit),
     riderFeesPaid: feesPaid,
     profitMargin,
   };
@@ -776,9 +777,9 @@ export function aggregateAdminDashboard(
         price: p.price,
         investPrice: p.investPrice,
         unitsSold: p.unitsSold,
-        revenue: Math.round(p.revenue * 100) / 100,
-        cost: Math.round(p.cost * 100) / 100,
-        profit: Math.round(p.profit * 100) / 100,
+        revenue: cleanDecimal(p.revenue),
+        cost: cleanDecimal(p.cost),
+        profit: cleanDecimal(p.profit),
       }))
       .sort((a, b) => b.unitsSold - a.unitsSold)
       .slice(0, 10);
@@ -935,7 +936,7 @@ export function aggregateCustomerDashboard(
     const val = spendingMap[m];
     return {
       month: m,
-      amount: Math.round(val.spending),
+      amount: cleanDecimal(val.spending),
       orders: val.orders,
     };
   });
@@ -945,8 +946,8 @@ export function aggregateCustomerDashboard(
     const val = spendingMap[m];
     return {
       month: m,
-      spending: Math.round(val.spending),
-      savings: Math.round(val.savings),
+      spending: cleanDecimal(val.spending),
+      savings: cleanDecimal(val.savings),
       orders: val.orders,
     };
   });

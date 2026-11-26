@@ -32,6 +32,14 @@ export function currencyDecimals(currency: string = "USD"): number {
   }
 }
 
+/**
+ * Strips IEEE-754 floating-point noise without rounding away real decimal precision.
+ */
+export function cleanDecimal(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.round((value + Number.EPSILON) * 1e6) / 1e6;
+}
+
 /** Formats an amount with a symbol, e.g. formatAmount(1200, "৳") => "৳1,200.00". */
 export function formatAmount(
   amount: number | string | undefined | null,
@@ -39,10 +47,15 @@ export function formatAmount(
   opts?: { showDecimals?: boolean; decimals?: number }
 ): string {
   const num = typeof amount === "number" ? amount : Number(amount) || 0;
-  const decimals = opts?.decimals ?? (opts?.showDecimals === false ? 0 : 2);
-  return `${symbol}${num.toLocaleString("en-US", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
+  const minDecimals = opts?.decimals ?? (opts?.showDecimals === false ? 0 : 2);
+  const maxDecimals = opts?.decimals !== undefined
+    ? opts.decimals
+    : opts?.showDecimals === false
+      ? 0
+      : Math.max(minDecimals, 6);
+  return `${symbol}${cleanDecimal(num).toLocaleString("en-US", {
+    minimumFractionDigits: minDecimals,
+    maximumFractionDigits: maxDecimals,
   })}`;
 }
 
@@ -73,5 +86,5 @@ export function convertCurrency(
   const toRate = rates[to.toUpperCase()];
   // An unknown pair leaves the number untouched rather than inventing a price.
   if (!fromRate || !toRate) return amount;
-  return roundToCurrency((amount / fromRate) * toRate, to);
+  return cleanDecimal((amount / fromRate) * toRate);
 }
