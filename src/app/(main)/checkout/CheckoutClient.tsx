@@ -470,7 +470,10 @@ export default function CheckoutClient({
         postalCode: shippingForm.postalCode.trim(),
       },
       paymentMethod: selectedPaymentMethod,
-      shippingMethod: (isFreeShippingEligible
+      // Free shipping is a perk of the standard method only. Express is a paid
+      // upgrade, so it is never downgraded to free just because the basket
+      // cleared the free-shipping threshold.
+      shippingMethod: (selectedShippingMethod === "standard" && isFreeShippingEligible
         ? "free"
         : selectedShippingMethod) as "free" | "standard" | "express",
       ...(selectedPaymentMethod !== "cod" && transactionId ? { transactionId } : {}),
@@ -1290,14 +1293,18 @@ export default function CheckoutClient({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
                       <span>
-                        {isFreeShippingEligible
-                          ? "Free Shipping"
-                          : selectedShippingMethod === "express"
-                            ? "Express Priority"
+                        {selectedShippingMethod === "express"
+                          ? "Express Priority"
+                          : isFreeShippingEligible
+                            ? "Free Shipping"
                             : "Standard Shipping"}
                       </span>
                       <span className="text-[10px] text-[var(--foreground-muted)]">
-                        ({isFreeShippingEligible ? "auto-applied" : selectedShippingMethod === "express" ? "1-2 business days" : estimatedDays})
+                        ({selectedShippingMethod === "express"
+                          ? "1-2 business days"
+                          : isFreeShippingEligible
+                            ? "auto-applied"
+                            : estimatedDays})
                       </span>
                     </div>
                     <span>
