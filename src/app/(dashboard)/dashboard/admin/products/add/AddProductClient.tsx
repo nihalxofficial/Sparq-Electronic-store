@@ -106,7 +106,7 @@ export default function AddProductClient({
     description: "",
     inStock: true,
     warrantyPeriodMonths: "",
-    warrantyType: "manufacturer-warranty",
+    warrantyType: "none",
     warrantyTerms: "",
     offerEndDate: "",
   });
@@ -274,15 +274,13 @@ export default function AddProductClient({
       return;
     }
 
-    // The warranty has to agree with itself before it reaches the API. A covering
-    // type with no period, or an "Other" type with no terms, would be stored as
-    // no warranty at all — the opposite of what the admin just chose.
+    // A warranty is optional. An empty period means nothing was said about a
+    // warranty, so the product is saved as No warranty rather than blocked.
+    // Only a real period has to agree with its type.
     const warrantyMonths = parseInt(formState.warrantyPeriodMonths || "0", 10) || 0;
-    if (formState.warrantyType !== "none" && warrantyMonths <= 0) {
-      toast.error("Set a warranty period of at least 1 month, or choose No Warranty.");
-      return;
-    }
-    if (formState.warrantyType === "other" && !formState.warrantyTerms.trim()) {
+    const wantsWarranty = warrantyMonths > 0 && formState.warrantyType !== "none";
+
+    if (wantsWarranty && formState.warrantyType === "other" && !formState.warrantyTerms.trim()) {
       toast.error("Describe the coverage in Warranty Terms for an Other warranty.");
       return;
     }
@@ -296,7 +294,7 @@ export default function AddProductClient({
 
     // A manufacturer warranty is claimed from the brand, so the specs have to
     // carry one before the product is saved.
-    if (formState.warrantyType === "manufacturer-warranty" && !hasBrandSpec(specObj)) {
+    if (wantsWarranty && formState.warrantyType === "manufacturer-warranty" && !hasBrandSpec(specObj)) {
       toast.error("Add the brand in Specifications — a manufacturer warranty is claimed from the brand.");
       return;
     }
@@ -320,11 +318,9 @@ export default function AddProductClient({
       additionalImages: galleryImages,
       specifications: Object.keys(specObj).length > 0 ? specObj : undefined,
       inStock: hasPositiveStock ? true : formState.inStock,
-      warrantyPeriodMonths: formState.warrantyPeriodMonths
-        ? parseInt(formState.warrantyPeriodMonths, 10)
-        : undefined,
-      warrantyType: formState.warrantyType,
-      warrantyTerms: formState.warrantyTerms || undefined,
+      warrantyPeriodMonths: wantsWarranty ? warrantyMonths : undefined,
+      warrantyType: wantsWarranty ? formState.warrantyType : "none",
+      warrantyTerms: wantsWarranty ? formState.warrantyTerms.trim() || undefined : undefined,
       offerEndDate:
         hasDiscount && formState.offerEndDate
           ? new Date(formState.offerEndDate).toISOString()

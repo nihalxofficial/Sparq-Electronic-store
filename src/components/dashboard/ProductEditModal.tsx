@@ -136,7 +136,7 @@ export default function ProductEditModal({
     subCategoryIds: new Set<string>(),
     inStock: true,
     warrantyPeriodMonths: "",
-    warrantyType: "manufacturer-warranty",
+    warrantyType: "none",
     warrantyTerms: "",
     offerEndDate: "",
   });
@@ -233,7 +233,7 @@ export default function ProductEditModal({
       inStock: product.inStock ?? true,
       warrantyPeriodMonths:
         product.warrantyPeriodMonths != null ? String(product.warrantyPeriodMonths) : "",
-      warrantyType: product.warrantyType || "manufacturer-warranty",
+      warrantyType: product.warrantyType || "none",
       warrantyTerms: product.warrantyTerms || "",
       offerEndDate: offerDeadlineValue,
     });
@@ -291,12 +291,13 @@ export default function ProductEditModal({
       return;
     }
 
+    // A warranty is optional. An empty period means the seller has nothing to
+    // say about a warranty, so the product is saved as No warranty rather than
+    // blocked. Only a real period has to agree with its type.
     const warrantyMonths = parseInt(editForm.warrantyPeriodMonths || "0", 10) || 0;
-    if (editForm.warrantyType !== "none" && warrantyMonths <= 0) {
-      toast.error("Set a warranty period of at least 1 month, or choose No Warranty.");
-      return;
-    }
-    if (editForm.warrantyType === "other" && !editForm.warrantyTerms.trim()) {
+    const wantsWarranty = warrantyMonths > 0 && editForm.warrantyType !== "none";
+
+    if (wantsWarranty && editForm.warrantyType === "other" && !editForm.warrantyTerms.trim()) {
       toast.error("Describe the coverage in Warranty Terms for an Other warranty.");
       return;
     }
@@ -306,6 +307,7 @@ export default function ProductEditModal({
       if (s.key.trim() && s.value.trim()) specObj[s.key.trim()] = s.value.trim();
     });
     if (
+      wantsWarranty &&
       editForm.warrantyType === "manufacturer-warranty" &&
       !hasBrandSpec(specObj) &&
       !editForm.brand.trim()
@@ -337,11 +339,9 @@ export default function ProductEditModal({
       categoryId: editForm.categoryId || undefined,
       subCategoryIds: Array.from(editForm.subCategoryIds),
       inStock: hasEditPositiveStock ? true : editForm.inStock,
-      warrantyPeriodMonths: editForm.warrantyPeriodMonths
-        ? parseInt(editForm.warrantyPeriodMonths, 10)
-        : undefined,
-      warrantyType: editForm.warrantyType,
-      warrantyTerms: editForm.warrantyTerms || undefined,
+      warrantyPeriodMonths: wantsWarranty ? warrantyMonths : undefined,
+      warrantyType: wantsWarranty ? editForm.warrantyType : "none",
+      warrantyTerms: wantsWarranty ? editForm.warrantyTerms.trim() || undefined : undefined,
       offerEndDate: renewedOffer && hasEditDiscount ? new Date(deadlineMs).toISOString() : null,
       specifications: specObj,
     };
