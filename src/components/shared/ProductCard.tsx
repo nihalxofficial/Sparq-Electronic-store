@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
-import { ShoppingBag, Heart, Repeat, Eye, Star, Sparkles, Share2 } from "lucide-react";
+import { ShoppingBag, Heart, Repeat, Eye, Star, Sparkles, Share2, Check, Loader2 } from "lucide-react";
 import { toast } from "react-toastify";
 import { Button } from "@heroui/react";
 import { authClient } from "@/lib/auth-client";
@@ -120,6 +120,8 @@ export default function ProductCard({
   const [imgSrc, setImgSrc] = useState<string>(product.image);
   const [isWishlisted, setIsWishlisted] = useState<boolean>(false);
   const [isInCart, setIsInCart] = useState<boolean>(false);
+  const [isAddingToCart, setIsAddingToCart] = useState<boolean>(false);
+  const [justAdded, setJustAdded] = useState<boolean>(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState<boolean>(false);
   const [rating, setRating] = useState<number>(Number(product.rating) || 0);
   const [reviewCount, setReviewCount] = useState<number>(Number(product.reviewCount) || 0);
@@ -237,7 +239,8 @@ export default function ProductCard({
       return;
     }
 
-    // If already in cart, prevent duplicate add
+    // If already in cart or currently submitting, prevent duplicate add
+    if (isAddingToCart) return;
     if (isInCart) {
       toast.info(`"${product.title}" is already in your cart!`, {
         icon: <span>🛒</span>,
@@ -245,10 +248,13 @@ export default function ProductCard({
       return;
     }
 
+    setIsAddingToCart(true);
     try {
       const res = await addToCart(product.id, 1);
       if (res?.success !== false) {
         setIsInCart(true);
+        setJustAdded(true);
+        setTimeout(() => setJustAdded(false), 1600);
         toast.success(`"${product.title}" added to cart!`, {
           icon: <span>🛒</span>,
         });
@@ -259,6 +265,8 @@ export default function ProductCard({
       }
     } catch {
       toast.error("Failed to add to cart");
+    } finally {
+      setIsAddingToCart(false);
     }
   };
 
@@ -610,34 +618,68 @@ export default function ProductCard({
           )}
 
           {/* Add To Cart Button — disabled when out of stock or already in cart */}
-          <button
-            type="button"
-            aria-label={
-              isOutOfStock
-                ? "Out of stock"
-                : isInCart
-                ? "Already in cart"
-                : "Add to cart"
-            }
-            onClick={handleAddToCart}
-            disabled={isOutOfStock || isInCart}
-            className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full shadow-xs flex items-center justify-center transition-all duration-300 ${
-              isOutOfStock
-                ? "bg-[var(--surface-alt)] text-[var(--foreground-muted)] border border-[var(--border-color)] cursor-not-allowed opacity-60 shadow-none"
-                : isInCart
-                ? "bg-brand-gradient text-[var(--on-grad-text)] border-transparent shadow-lg shadow-brand cursor-default"
-                : "bg-[var(--surface)] text-[var(--foreground)] border border-[var(--border-color)] hover:bg-brand-gradient hover:text-[var(--on-grad-text)] hover:border-transparent hover:shadow-brand hover:scale-105 active:scale-95 cursor-pointer"
-            }`}
-            title={
-              isOutOfStock
-                ? "Out of stock"
-                : isInCart
-                ? "Already in cart"
-                : "Add to cart"
-            }
-          >
-            <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.2]" />
-          </button>
+          <div className="relative">
+            {justAdded && (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -top-2 left-1/2 -translate-x-1/2 z-20 px-1.5 py-0.5 rounded-full bg-emerald-500 text-white text-[9px] font-extrabold shadow-md animate-[cartFloatPlus_1.2s_ease-out_forwards]"
+                >
+                  +1
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 rounded-full bg-emerald-400/50 animate-ping"
+                />
+              </>
+            )}
+            <button
+              type="button"
+              aria-label={
+                isOutOfStock
+                  ? "Out of stock"
+                  : isAddingToCart
+                  ? "Adding to cart"
+                  : justAdded
+                  ? "Added to cart"
+                  : isInCart
+                  ? "Already in cart"
+                  : "Add to cart"
+              }
+              onClick={handleAddToCart}
+              disabled={isOutOfStock || isInCart || isAddingToCart}
+              className={`relative z-10 w-7 h-7 sm:w-9 sm:h-9 rounded-full shadow-xs flex items-center justify-center transition-all duration-300 ${
+                isOutOfStock
+                  ? "bg-[var(--surface-alt)] text-[var(--foreground-muted)] border border-[var(--border-color)] cursor-not-allowed opacity-60 shadow-none"
+                  : justAdded
+                  ? "bg-emerald-500 text-white border border-emerald-400 shadow-lg shadow-emerald-500/35 scale-110 cursor-default"
+                  : isInCart
+                  ? "bg-brand-gradient text-[var(--on-grad-text)] border-transparent shadow-lg shadow-brand cursor-default"
+                  : isAddingToCart
+                  ? "bg-brand-gradient text-[var(--on-grad-text)] border-transparent shadow-md cursor-wait"
+                  : "bg-[var(--surface)] text-[var(--foreground)] border border-[var(--border-color)] hover:bg-brand-gradient hover:text-[var(--on-grad-text)] hover:border-transparent hover:shadow-md hover:scale-105 active:scale-95 cursor-pointer"
+              }`}
+              title={
+                isOutOfStock
+                  ? "Out of stock"
+                  : justAdded
+                  ? "Added to cart!"
+                  : isInCart
+                  ? "Already in cart"
+                  : "Add to cart"
+              }
+            >
+              {isAddingToCart ? (
+                <Loader2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+              ) : justAdded ? (
+                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.8] animate-[cartPopIn_0.35s_ease-out]" />
+              ) : isInCart ? (
+                <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.5]" />
+              ) : (
+                <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4 stroke-[2.2]" />
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

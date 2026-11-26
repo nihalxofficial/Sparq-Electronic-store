@@ -627,8 +627,40 @@ body {
 }
 
 /* ─── Dynamic Palette Gradient Utilities ─────────────────────────────────────── */
-.bg-brand-gradient {
+.bg-brand-gradient,
+.hover\:bg-brand-gradient:hover {
   background-image: var(--brand-gradient) !important;
+}
+
+@keyframes cartFloatPlus {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.75);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1.05);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-16px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-22px) scale(0.9);
+  }
+}
+
+@keyframes cartPopIn {
+  0% {
+    transform: scale(0.6);
+  }
+  55% {
+    transform: scale(1.22);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* ─── Social Icon Button — gradient hover that works in light & dark mode ────── */
