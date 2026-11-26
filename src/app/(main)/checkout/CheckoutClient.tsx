@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -18,7 +18,6 @@ import {
   ArrowRight,
   Lock,
   CreditCard,
-  CheckCircle2,
   AlertCircle,
   Phone,
   MapPin,
@@ -56,9 +55,7 @@ import WalletPaymentModal from "./WalletPaymentModal";
 import {
   buildDemoTransactionId,
   buildDemoWalletPhone,
-  isTransactionIdValid,
   isWalletPhoneValid,
-  normaliseTransactionId,
   normaliseWalletPhone,
 } from "@/lib/walletPayment";
 
@@ -196,11 +193,12 @@ export default function CheckoutClient({
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<PaymentMethod>("cod");
 
-  // ── Wallet Verification State (React useState ONLY - session only) ─────────
-  // Phone number + TrxID typed by the customer (demo flow, nothing is sent away)
+  // ── Wallet Payment State ───────────────────────────────────────────────────
+  // The customer no longer types a number or a TrxID: choosing a wallet and
+  // pressing Place Order runs the animated gateway, which invents a receipt and
+  // then places the order itself. Only the values shown in the modal are kept.
   const [walletPhone, setWalletPhone] = useState<string>("");
   const [walletTransactionId, setWalletTransactionId] = useState<string>("");
-  const [isWalletVerified, setIsWalletVerified] = useState<boolean>(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
 
   // ── Reward Points State ────────────────────────────────────────────────────
@@ -396,41 +394,25 @@ export default function CheckoutClient({
     );
   }, [shippingForm]);
 
-  // Validation: Payment requirement
-  // If COD: ready once shipping is valid
-  // If wallet: phone + TrxID must pass the demo gateway check
-  const isPaymentValid = useMemo(() => {
-    if (selectedPaymentMethod === "cod") return true;
-    return isWalletVerified && Boolean(walletTransactionId);
-  }, [selectedPaymentMethod, isWalletVerified, walletTransactionId]);
-
-  // The Verify button only wakes up once both fields look like real wallet data.
-  const isWalletDetailsValid =
-    isWalletPhoneValid(walletPhone) && isTransactionIdValid(walletTransactionId);
-
+  // A wallet payment needs nothing typed up front: choosing it and pressing
+  // Place Order runs the gateway, so the only requirement is a valid address.
   // While the incoming code is being re-priced the totals on screen are not the
   // final ones, so the button waits a moment rather than quoting a stale number.
   const isCheckoutReady =
-    !isCartEmpty && isShippingValid && isPaymentValid && !isPlacingOrder && !isCheckingCoupon;
+    !isCartEmpty && isShippingValid && !isPlacingOrder && !isCheckingCoupon;
 
   const currentPaymentOption =
     PAYMENT_OPTIONS.find((opt) => opt.id === selectedPaymentMethod) ||
     PAYMENT_OPTIONS[0];
 
-  // TrxID placeholder so the demo looks like the SMS the wallet really sends.
-  const transactionIdPlaceholder =
-    selectedPaymentMethod === "rocket" ? "12 digit TrxID" : "e.g. 9F2K7LM4QZ";
-
   // ── Handlers ───────────────────────────────────────────────────────────────
 
-  // Reset wallet verification state when user switches payment method
+  // Reset the shown wallet receipt when the customer switches payment method.
   const handlePaymentMethodChange = (method: PaymentMethod) => {
     if (method !== selectedPaymentMethod) {
       setSelectedPaymentMethod(method);
-      // Reset wallet details so one wallet's payment can't verify another wallet
       setWalletPhone("");
       setWalletTransactionId("");
-      setIsWalletVerified(false);
       setIsPaymentModalOpen(false);
     }
   };
@@ -464,84 +446,9 @@ export default function CheckoutClient({
     setSelectedAddressId(picked._id);
   };
 
-  // 1. Validate the typed wallet number + TrxID, then open the gateway modal.
-  const handleStartWalletVerification = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-
-    if (isSuspended) {
-      setShowSuspendedAlert(true);
-      return;
-    }
-
-    if (!isWalletPhoneValid(walletPhone)) {
-      toast.error("Enter a valid 11-digit mobile number, e.g. 01712345678");
-      return;
-    }
-
-    if (!isTransactionIdValid(walletTransactionId)) {
-      toast.error("Enter the TrxID from your wallet SMS (8-20 letters or digits)");
-      return;
-    }
-
-    setIsWalletVerified(false);
-    setIsPaymentModalOpen(true);
-  };
-
-  // 2. Demo shortcut: fill both fields with realistic values and run the gateway.
-  const handleDemoAutoFill = () => {
-    if (isSuspended) {
-      setShowSuspendedAlert(true);
-      return;
-    }
-
-    // Reuse what the customer typed, then the shipping phone, then invent one.
-    const shippingPhone = normaliseWalletPhone(shippingForm.phone);
-    let phone = walletPhone;
-
-    if (!isWalletPhoneValid(phone)) {
-      phone = isWalletPhoneValid(shippingPhone) ? shippingPhone : buildDemoWalletPhone();
-    }
-
-    setWalletPhone(phone);
-    setWalletTransactionId(buildDemoTransactionId(selectedPaymentMethod));
-    setIsWalletVerified(false);
-    setIsPaymentModalOpen(true);
-  };
-
-  // The gateway modal finished its checks - remember that this payment went through.
-  const handleWalletPaymentSuccess = useCallback(() => {
-    setIsWalletVerified(true);
-  }, []);
-
-  // 3. Start over (wrong TrxID, wrong number, ...)
-  const handleResetWalletVerification = () => {
-    setWalletTransactionId("");
-    setIsWalletVerified(false);
-    setIsPaymentModalOpen(false);
-  };
-
-  // 4. Place Order — calls real backend POST /api/orders
-  const handlePlaceOrder = async () => {
-    if (isSuspended) {
-      setShowSuspendedAlert(true);
-      return;
-    }
-
-    if (isCartEmpty) {
-      toast.error("Your cart is empty. Add items before placing an order.");
-      return;
-    }
-
-    if (!isShippingValid) {
-      toast.error("Please complete all required shipping address fields.");
-      return;
-    }
-
-    if (selectedPaymentMethod !== "cod" && !isWalletVerified) {
-      toast.error("Please complete mobile wallet verification before placing order.");
-      return;
-    }
-
+  // Submits the order. A wallet order reaches here only after the gateway has
+  // run, carrying the receipt it invented; a cash order arrives directly.
+  const submitOrder = async (transactionId?: string) => {
     setIsPlacingOrder(true);
 
     const orderData = {
@@ -566,9 +473,7 @@ export default function CheckoutClient({
       shippingMethod: (isFreeShippingEligible
         ? "free"
         : selectedShippingMethod) as "free" | "standard" | "express",
-      ...(selectedPaymentMethod !== "cod"
-        ? { transactionId: normaliseTransactionId(walletTransactionId) }
-        : {}),
+      ...(selectedPaymentMethod !== "cod" && transactionId ? { transactionId } : {}),
       ...(pointsToRedeem > 0 ? { pointsToRedeem } : {}),
       ...(coupon ? { couponCode: coupon.code } : {}),
     };
@@ -614,6 +519,54 @@ export default function CheckoutClient({
       console.error("Order placement error:", err);
       setIsPlacingOrder(false);
     }
+  };
+
+  // The gateway's success callback must keep its identity for the modal's timer,
+  // so it reaches the newest submitOrder through a ref instead of a dependency.
+  const submitOrderRef = useRef(submitOrder);
+  const pendingTransactionIdRef = useRef<string>("");
+  submitOrderRef.current = submitOrder;
+
+  // The gateway finished: place the order with the receipt it produced.
+  const handleWalletPaymentSuccess = useCallback(async () => {
+    setIsPaymentModalOpen(false);
+    await submitOrderRef.current(pendingTransactionIdRef.current);
+  }, []);
+
+  // Place Order — a cash order goes straight through; a wallet order opens the
+  // animated gateway first, and the gateway is what actually places the order.
+  const handlePlaceOrder = async () => {
+    if (isSuspended) {
+      setShowSuspendedAlert(true);
+      return;
+    }
+
+    if (isCartEmpty) {
+      toast.error("Your cart is empty. Add items before placing an order.");
+      return;
+    }
+
+    if (!isShippingValid) {
+      toast.error("Please complete all required shipping address fields.");
+      return;
+    }
+
+    if (selectedPaymentMethod === "cod") {
+      await submitOrder();
+      return;
+    }
+
+    // A wallet payment: invent a number and a receipt, show the gateway, and let
+    // its success callback place the order. Nothing is typed by the customer.
+    const shippingPhone = normaliseWalletPhone(shippingForm.phone);
+    const phone = isWalletPhoneValid(shippingPhone)
+      ? shippingPhone
+      : buildDemoWalletPhone();
+
+    pendingTransactionIdRef.current = buildDemoTransactionId(selectedPaymentMethod);
+    setWalletPhone(phone);
+    setWalletTransactionId(pendingTransactionIdRef.current);
+    setIsPaymentModalOpen(true);
   };
 
   // ── Common Styling Classes ──────────────────────────────────────────────────
@@ -829,130 +782,17 @@ export default function CheckoutClient({
                     </div>
                   </div>
                 ) : (
-                  /* Mobile Wallet Entry Block */
-                  <div className="space-y-3">
-                    <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/20 flex items-center gap-2.5 text-xs text-primary">
-                      <Sparkles className="w-4 h-4 shrink-0 text-primary" />
-                      <span>
-                        <strong>Instant Digital Checkout:</strong> Please complete your shipping address below — it is required for {currentPaymentOption.name} orders too.
-                      </span>
-                    </div>
-
-                    <div className="p-4 sm:p-5 rounded-xl bg-[var(--surface-alt)] border border-[var(--border-color)] space-y-4">
-                      <div className="flex items-center justify-between pb-3 border-b border-[var(--border-color)]">
-                        <div className="flex items-center gap-2">
-                          <Smartphone className="w-4 h-4 text-primary" />
-                          <h3 className="text-xs font-bold text-[var(--foreground)] uppercase tracking-wider">
-                            {selectedPaymentMethod.toUpperCase()} Payment Verification
-                          </h3>
-                        </div>
-                        {isWalletVerified ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-100/70 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-300 dark:border-emerald-800">
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            Payment Verified
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800/60">
-                            <AlertCircle className="w-3.5 h-3.5" />
-                            Verification Pending
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Wallet number + TrxID - the two details a real wallet receipt shows */}
-                      <form onSubmit={handleStartWalletVerification} className="space-y-3">
-                        <div className="grid sm:grid-cols-2 gap-3">
-                          <div className={fieldClass}>
-                            <label className={labelClass}>Wallet Mobile Number</label>
-                            <div className="relative">
-                              <Input
-                                type="tel"
-                                inputMode="numeric"
-                                placeholder="01XXXXXXXXX"
-                                value={walletPhone}
-                                onChange={(e) => setWalletPhone(normaliseWalletPhone(e.target.value))}
-                                disabled={isWalletVerified}
-                                className="w-full"
-                              />
-                              <Smartphone className="w-4 h-4 text-[var(--foreground-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                            </div>
-                          </div>
-
-                          <div className={fieldClass}>
-                            <label className={labelClass}>Transaction ID (TrxID)</label>
-                            <div className="relative">
-                              <Input
-                                type="text"
-                                placeholder={transactionIdPlaceholder}
-                                value={walletTransactionId}
-                                onChange={(e) => setWalletTransactionId(normaliseTransactionId(e.target.value))}
-                                disabled={isWalletVerified}
-                                className="w-full font-mono"
-                              />
-                              <Hash className="w-4 h-4 text-[var(--foreground-muted)] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                            </div>
-                          </div>
-                        </div>
-
-                        <p className="text-[11px] text-[var(--foreground-muted)] leading-relaxed">
-                          Pay with your {currentPaymentOption.name} app first, then paste the TrxID from
-                          the confirmation SMS. No real money moves here - press{" "}
-                          <strong>Use demo payment</strong> to fill both fields and run the gateway.
-                        </p>
-
-                        {!isWalletVerified && (
-                          <div className="flex flex-col sm:flex-row gap-2">
-                            <Button
-                              type="button"
-                              onPress={handleDemoAutoFill}
-                              className="h-10 flex-1 bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/50 dark:hover:bg-amber-950/70 text-amber-900 dark:text-amber-200 font-bold text-xs rounded-xl border border-amber-300 dark:border-amber-800/70 transition-colors"
-                            >
-                              <span className="flex items-center justify-center gap-1.5">
-                                <Sparkles className="w-4 h-4" />
-                                Use demo payment
-                              </span>
-                            </Button>
-
-                            <Button
-                              type="submit"
-                              isDisabled={!isWalletDetailsValid}
-                              className="h-10 flex-1 bg-primary hover:bg-primary-hover text-white font-bold text-xs rounded-xl transition-colors disabled:opacity-50"
-                            >
-                              <span className="flex items-center justify-center gap-1.5">
-                                <Lock className="w-4 h-4" />
-                                Verify Payment
-                              </span>
-                            </Button>
-                          </div>
-                        )}
-                      </form>
-
-                      {/* Verified State Banner */}
-                      {isWalletVerified && (
-                        <div className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                              <CheckCircle2 className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-emerald-900 dark:text-emerald-200">
-                                Payment Authenticated & Ready
-                              </p>
-                              <p className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400">
-                                TrxID {walletTransactionId} - {walletPhone}
-                              </p>
-                            </div>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={handleResetWalletVerification}
-                            className="text-[11px] font-semibold text-[var(--foreground-muted)] hover:text-rose-600 dark:text-[var(--foreground-muted)] dark:hover:text-rose-400 underline cursor-pointer"
-                          >
-                            Re-verify
-                          </button>
-                        </div>
-                      )}
+                  /* A wallet payment needs nothing typed: the gateway runs on Place Order. */
+                  <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-start gap-3 text-xs text-primary">
+                    <Sparkles className="w-4 h-4 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="font-bold">
+                        Pay with {currentPaymentOption.name} when you place the order
+                      </p>
+                      <p className="text-primary/80">
+                        Nothing to type here — pressing <strong>Place Order</strong> opens the secure{" "}
+                        {currentPaymentOption.name} gateway, confirms the payment, and places your order.
+                      </p>
                     </div>
                   </div>
                 )}
@@ -1538,10 +1378,10 @@ export default function CheckoutClient({
                     </p>
                   )}
 
-                  {selectedPaymentMethod !== "cod" && !isWalletVerified && (
-                    <p className="text-[11px] text-center text-amber-600 dark:text-amber-400 flex items-center justify-center gap-1">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                      Verify your mobile wallet before placing order.
+                  {selectedPaymentMethod !== "cod" && (
+                    <p className="text-[11px] text-center text-[var(--foreground-muted)] flex items-center justify-center gap-1">
+                      <Lock className="w-3.5 h-3.5 shrink-0" />
+                      The {currentPaymentOption.name} gateway will open when you press Place Order.
                     </p>
                   )}
                 </div>
@@ -1568,9 +1408,9 @@ export default function CheckoutClient({
       )}
 
       {/* ════════════════════════════════════════════════════════
-          DEMO MOBILE WALLET PAYMENT GATEWAY (PHONE + TRXID)
+          ANIMATED WALLET GATEWAY (runs on Place Order)
       ════════════════════════════════════════════════════════ */}
-      {/* Demo wallet gateway: runs the phone + TrxID check, then shows the receipt. */}
+      {/* The gateway invents a receipt, shows the checks, then places the order. */}
       {isPaymentModalOpen && (
         <WalletPaymentModal
           gatewayName={currentPaymentOption.name}

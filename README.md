@@ -628,6 +628,7 @@ Cancelling a paid order marks its payment **refunded**.
 
 ## Recent Changes
 
+- **Checkout:** the wallet fields are gone — pick a payment method on top, and pressing **Place Order** runs the animated gateway automatically and places the order.
 - **One product edit modal:** the admin and the seller now share a single edit form, so a seller can set warranty, specifications, discount and offer dates exactly like the admin.
 - **Order-level financial analytics & modal:** Admin and Premium/Advanced vendors get per-order and per-product financial breakdowns (original price, discounts, coupon/points allocations, cost, commission, rider payout responsibility, Admin/Vendor profit split, and before/after discount P/L) in a responsive HeroUI v3 modal, with strict backend plan gating and vendor isolation.
 - **PDF & CSV financial exports:** Admin and eligible Vendor PDF and CSV analytics reports include order-level financial summaries and product-level calculation tables.
