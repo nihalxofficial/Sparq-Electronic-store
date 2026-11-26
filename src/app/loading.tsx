@@ -76,6 +76,8 @@ export default function Loading() {
   const [mounted, setMounted] = useState(false);
   const [progress, setProgress] = useState(8);
   const [tick, setTick] = useState(0);
+  const [logoSrc, setLogoSrc] = useState<string>("");
+  const [logoFailed, setLogoFailed] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -99,8 +101,20 @@ export default function Loading() {
     };
   }, []);
 
-  const siteName = settings.siteName || "Sparq";
-  const logo = settings.navbarLogo?.light || settings.navbarLogo?.dark || "";
+  const siteName = settings.siteName?.trim() || "Sparq";
+  const siteTagline = settings.siteTagline?.trim() || "Better products. A brighter you.";
+  const resolvedLogo =
+    settings.navbarLogo?.light ||
+    settings.navbarLogo?.dark ||
+    settings.faviconUrl ||
+    "/icon.svg";
+
+  useEffect(() => {
+    setLogoSrc(resolvedLogo);
+    setLogoFailed(false);
+  }, [resolvedLogo]);
+
+  const activeLogo = logoSrc || resolvedLogo;
   const { label: pageLabel, Icon, kind } = mounted
     ? getPageContext(pathname)
     : { label: "Loading", Icon: Zap, kind: "generic" as SectionKind };
@@ -202,29 +216,44 @@ export default function Loading() {
           </svg>
 
           {/* Center Brand Tile */}
-          <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] shadow-lg">
-            <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent animate-[shimmer_2.2s_infinite]" />
-            {logo ? (
+          <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] shadow-lg ring-1 ring-primary/15">
+            <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent animate-[shimmer_2.2s_infinite]" />
+            {!logoFailed && activeLogo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={logo}
+                src={activeLogo}
                 alt={siteName}
-                className="h-full w-full object-contain p-2"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                className="h-full w-full object-contain p-2 drop-shadow-xs"
+                onError={() => {
+                  if (activeLogo !== "/icon.svg") {
+                    setLogoSrc("/icon.svg");
+                  } else {
+                    setLogoFailed(true);
+                  }
                 }}
               />
             ) : (
-              <Zap className="h-6 w-6 text-primary" />
+              <div className="flex h-full w-full items-center justify-center bg-brand-gradient text-[var(--on-grad-text)] font-black text-xl tracking-tight">
+                {siteName.slice(0, 1).toUpperCase()}
+              </div>
             )}
           </div>
         </div>
 
-        {/* Site Name + Live Context Pill */}
+        {/* Site Name + Custom Brand Signature + Live Context Pill */}
         <div className="flex flex-col items-center gap-2.5 text-center">
-          <h1 className="text-xl font-black tracking-tight text-[var(--foreground)]">
-            {siteName}
-          </h1>
+          <div className="flex flex-col items-center gap-1">
+            <div className="inline-flex items-center gap-2">
+              <span className="h-px w-5 bg-gradient-to-r from-transparent to-primary/60" />
+              <h1 className="bg-brand-gradient bg-clip-text text-transparent text-2xl font-black tracking-tight">
+                {siteName}
+              </h1>
+              <span className="h-px w-5 bg-gradient-to-l from-transparent to-primary/60" />
+            </div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--foreground-muted)]/85">
+              {siteTagline}
+            </p>
+          </div>
 
           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--border-color)] bg-[var(--surface)]/90 px-3.5 py-1.5 shadow-2xs">
             <span className="relative flex h-2 w-2">
