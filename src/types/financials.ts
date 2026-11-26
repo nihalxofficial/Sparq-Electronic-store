@@ -104,6 +104,7 @@ export interface OrderFinancialAnalyticsResponse {
   days: number;
   plan?: { id: string; name: string };
   summary: FinancialAnalyticsSummary;
+  previousSummary?: FinancialAnalyticsSummary;
   orders: OrderFinancialBreakdown[];
   pagination: {
     page: number;

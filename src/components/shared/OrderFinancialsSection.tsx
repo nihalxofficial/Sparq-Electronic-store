@@ -24,11 +24,16 @@ export default function OrderFinancialsSection({
 
   if (!data) return null;
 
-  const { summary, orders } = data;
+  const { summary, previousSummary, orders } = data;
   const money = (val: number | null | undefined) => {
     if (val == null) return "—";
     const sign = val < 0 ? "-" : "";
     return `${sign}${formatPrice(Math.abs(val))}`;
+  };
+  const deltaPct = (cur: number, prev: number) => {
+    if (!prev) return null;
+    const pct = Math.round(((cur - prev) / Math.abs(prev)) * 100);
+    return `${pct >= 0 ? "+" : ""}${pct}%`;
   };
 
   const showRiderCol = mode === "admin" || orders.some((o) => o.vendorRiderPayout > 0);
@@ -58,14 +63,22 @@ export default function OrderFinancialsSection({
       {/* Summary KPI Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="p-3.5 bg-[var(--surface-elevated)] border border-[var(--border-color)] rounded-2xl shadow-2xs">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
-            Customer Paid Total
-          </p>
+          <div className="flex items-center justify-between gap-1">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
+              {mode === "vendor" ? "Your Gross Revenue" : "Customer Paid Total"}
+            </p>
+            {previousSummary && deltaPct(summary.totalCustomerPaid, previousSummary.totalCustomerPaid) && (
+              <span className="text-[10px] font-bold text-primary">
+                {deltaPct(summary.totalCustomerPaid, previousSummary.totalCustomerPaid)}
+              </span>
+            )}
+          </div>
           <p className="text-lg font-extrabold text-primary mt-1">
             {money(summary.totalCustomerPaid)}
           </p>
           <p className="text-[10px] text-[var(--foreground-muted)]">
             Orig: {money(summary.originalTotalProductPrice)}
+            {previousSummary ? ` · Prev ${data.days}d: ${money(previousSummary.totalCustomerPaid)}` : ""}
           </p>
         </Card>
 
@@ -96,13 +109,27 @@ export default function OrderFinancialsSection({
           </p>
           <p className="text-[10px] text-[var(--foreground-muted)]">
             Cost: {money(summary.totalCost)}
+            {previousSummary ? ` · Prev: ${money(previousSummary.totalProfitWithoutDiscounts)}` : ""}
           </p>
         </Card>
 
         <Card className="p-3.5 bg-[var(--surface-elevated)] border border-[var(--border-color)] rounded-2xl shadow-2xs">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
-            Net Profit (With Discounts)
-          </p>
+          <div className="flex items-center justify-between gap-1">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
+              Net Profit (With Discounts)
+            </p>
+            {previousSummary && deltaPct(summary.totalProfitWithDiscounts, previousSummary.totalProfitWithDiscounts) && (
+              <span
+                className={`text-[10px] font-bold ${
+                  summary.totalProfitWithDiscounts >= previousSummary.totalProfitWithDiscounts
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-rose-600 dark:text-rose-400"
+                }`}
+              >
+                {deltaPct(summary.totalProfitWithDiscounts, previousSummary.totalProfitWithDiscounts)}
+              </span>
+            )}
+          </div>
           <p
             className={`text-lg font-extrabold mt-1 flex items-center gap-1 ${
               summary.totalProfitWithDiscounts >= 0
@@ -123,6 +150,7 @@ export default function OrderFinancialsSection({
               : showRiderCol
                 ? `Rider payouts: ${money(summary.totalRiderPayout)}`
                 : "After cost & commission"}
+            {previousSummary ? ` · Prev P/L: ${money(previousSummary.totalProfitWithDiscounts)}` : ""}
           </p>
         </Card>
       </div>
