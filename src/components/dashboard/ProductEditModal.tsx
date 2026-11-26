@@ -348,7 +348,14 @@ export default function ProductEditModal({
 
     try {
       const res = await onSave(id, payload);
-      if (res?.success !== false) onOpenChange(false);
+      if (res?.success === false) {
+        // The API refused the save: say why, and keep the form open so the
+        // editor can fix it. A silent stay-open is what made a refusal look
+        // like "the product can't be edited".
+        toast.error(res?.message || "The product could not be saved.");
+        return;
+      }
+      onOpenChange(false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Error saving product");
     } finally {
