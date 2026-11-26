@@ -60,6 +60,7 @@ export default async function AdminAnalyticsPage({ searchParams }: AdminAnalytic
         monthlyProfitData={data.monthlyProfitData}
         yearlyProfitData={data.yearlyProfitData}
         topSellingByPeriod={data.topSellingByPeriod}
+        orderFinancials={orderFinancials}
       />
 
       <OrderFinancialsSection data={orderFinancials} mode="admin" />

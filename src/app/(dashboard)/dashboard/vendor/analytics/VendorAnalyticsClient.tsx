@@ -362,6 +362,7 @@ export default function VendorAnalyticsClient({
       placedAt: formatOrderDate(order.placedAt),
     })),
     full: canExportPdf,
+    orderFinancials: report.plan.id !== "free" ? orderFinancials : null,
   };
 
   const exportOptions = { siteName, currency };

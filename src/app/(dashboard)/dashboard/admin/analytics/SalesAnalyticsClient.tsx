@@ -60,6 +60,7 @@ import {
 import { exportAdminOverviewCsv, exportTopSellingCsv } from "@/lib/csvExport";
 import { downloadAdminOverviewPdf } from "@/lib/dashboardPdf";
 import { useSiteSettings } from "@/context/SiteSettingsContext";
+import type { OrderFinancialAnalyticsResponse } from "@/types/financials";
 
 /**
  * The sales side of the analytics desk: money in, money out, what sold and
@@ -80,6 +81,7 @@ interface SalesAnalyticsClientProps {
   monthlyProfitData: ProfitDataPoint[];
   yearlyProfitData: ProfitDataPoint[];
   topSellingByPeriod: TopSellingByPeriod;
+  orderFinancials?: OrderFinancialAnalyticsResponse | null;
 }
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -105,6 +107,7 @@ export default function SalesAnalyticsClient({
   monthlyProfitData,
   yearlyProfitData,
   topSellingByPeriod,
+  orderFinancials = null,
 }: SalesAnalyticsClientProps) {
   const { settings, currencySymbol, formatPrice } = useSiteSettings();
   const [revenueMetric, setRevenueMetric] = useState<"both" | "revenue" | "orders">("both");
@@ -134,6 +137,7 @@ export default function SalesAnalyticsClient({
     paymentMethodData,
     topProducts,
     recentOrders,
+    orderFinancials,
   };
 
   const exportOptions = { siteName: settings.siteName, currency: settings.currency };

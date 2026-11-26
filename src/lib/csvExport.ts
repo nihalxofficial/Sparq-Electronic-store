@@ -11,6 +11,7 @@
  */
 
 import { cleanDecimal } from "./currency";
+import type { OrderFinancialAnalyticsResponse } from "@/types/financials";
 
 export type CsvValue = string | number | boolean | null | undefined;
 
@@ -222,6 +223,7 @@ export interface AdminOverviewExportData {
     pointsRedeemed?: number;
     pointsEarned?: number;
   }>;
+  orderFinancials?: OrderFinancialAnalyticsResponse | null;
 }
 
 /** Builds and downloads the admin overview CSV report. */
@@ -413,6 +415,7 @@ export function exportAdminOverviewCsv(
       columns: ["Order", "Customer", "Email", "Items", "Amount", "Status", "Date"],
       rows: orderRows,
     },
+    ...buildFinancialCsvSections(data.orderFinancials, currency),
   ];
 
   const csv = buildReportCsv(
@@ -912,6 +915,97 @@ export interface VendorAnalyticsExportData {
    * per-product and per-order tables are the part the higher plans pay for.
    */
   full: boolean;
+  orderFinancials?: OrderFinancialAnalyticsResponse | null;
+}
+
+function buildFinancialCsvSections(
+  financials: OrderFinancialAnalyticsResponse | null | undefined,
+  currency: string
+): CsvSection[] {
+  if (!financials || financials.orders.length === 0) return [];
+
+  const orderRows: CsvValue[][] = financials.orders.map((o) => [
+    o.orderNumber,
+    o.createdAt.slice(0, 10),
+    o.orderStatus,
+    round2(o.originalTotalProductPrice),
+    round2(o.totalProductDiscounts),
+    round2(o.couponDiscount),
+    round2(o.pointsDiscount),
+    round2(o.deliveryCharge),
+    round2(o.finalCustomerPaid),
+    o.totalCost != null ? round2(o.totalCost) : "",
+    round2(o.platformCommissionTotal),
+    round2(o.riderPayout),
+    o.riderPayoutPayer,
+    o.expectedProfitWithoutDiscounts != null ? round2(o.expectedProfitWithoutDiscounts) : "",
+    o.expectedProfitWithDiscounts != null ? round2(o.expectedProfitWithDiscounts) : "",
+  ]);
+
+  const productRows: CsvValue[][] = financials.orders.flatMap((o) =>
+    o.items.map((item) => [
+      o.orderNumber,
+      item.title,
+      item.quantity,
+      item.ownerLabel,
+      round2(item.originalTotal),
+      round2(item.soldTotal),
+      round2(item.couponDiscountAllocated),
+      round2(item.pointsValueAllocated),
+      round2(item.finalCustomerPaid),
+      item.totalCost != null ? round2(item.totalCost) : "",
+      round2(item.platformCommission),
+      round2(item.riderPayoutShare),
+      item.riderPayoutPayer,
+      item.profitBeforeDiscounts != null ? round2(item.profitBeforeDiscounts) : "",
+      item.profitAfterDiscounts != null ? round2(item.profitAfterDiscounts) : "",
+    ])
+  );
+
+  return [
+    {
+      title: "Order financial summaries",
+      columns: [
+        "Order",
+        "Date",
+        "Status",
+        `Orig. Price (${currency})`,
+        `Product Discounts (${currency})`,
+        `Coupon Discount (${currency})`,
+        `Points Value (${currency})`,
+        `Delivery Charge (${currency})`,
+        `Customer Paid (${currency})`,
+        `Cost (${currency})`,
+        `Commission (${currency})`,
+        `Rider Payout (${currency})`,
+        "Rider Payer",
+        `Profit No Discounts (${currency})`,
+        `Net Profit With Discounts (${currency})`,
+      ],
+      rows: orderRows,
+    },
+    {
+      title: "Product-level financial calculations",
+      columns: [
+        "Order",
+        "Product",
+        "Qty",
+        "Owner",
+        `Orig. Total (${currency})`,
+        `After Discount (${currency})`,
+        `Coupon Alloc. (${currency})`,
+        `Points Alloc. (${currency})`,
+        `Customer Paid (${currency})`,
+        `Cost (${currency})`,
+        `Commission (${currency})`,
+        `Rider Share (${currency})`,
+        "Rider Payer",
+        `Profit No Discounts (${currency})`,
+        `Net Profit (${currency})`,
+      ],
+      rows: productRows,
+    },
+  ];
 }
 
 /** Builds and downloads one seller's own sales report. */
@@ -1047,6 +1141,10 @@ export function exportVendorAnalyticsCsv(
         order.placedAt,
       ]),
     });
+
+    if (data.orderFinancials) {
+      sections.push(...buildFinancialCsvSections(data.orderFinancials, currency));
+    }
   }
 
   const headerRows: CsvValue[][] = [

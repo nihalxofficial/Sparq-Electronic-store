@@ -1,5 +1,6 @@
 import type { jsPDF } from "jspdf";
-import { getCurrencySymbol } from "./currency";
+import { cleanDecimal, getCurrencySymbol } from "./currency";
+import type { OrderFinancialAnalyticsResponse } from "@/types/financials";
 import type {
   AdminOverviewExportData,
   CustomerOverviewExportData,
@@ -823,6 +824,10 @@ export async function downloadAdminOverviewPdf(
     );
   }
 
+  if (data.orderFinancials) {
+    appendFinancialPdfSections(report, data.orderFinancials, currency);
+  }
+
   report.save(
     `${safeFilePart(siteName)}-admin-overview-${new Date().toISOString().split("T")[0]}.pdf`
   );
@@ -1269,11 +1274,105 @@ export async function downloadVendorAnalyticsPdf(
     );
   }
 
+  if (data.full && data.orderFinancials) {
+    appendFinancialPdfSections(report, data.orderFinancials, currency);
+  }
+
   report.save(
     `${safeFilePart(data.vendorName || siteName)}-vendor-sales-${
       new Date().toISOString().split("T")[0]
     }.pdf`
   );
+}
+
+function appendFinancialPdfSections(
+  report: {
+    heading: (text: string) => void;
+    table: (
+      columns: Array<{ label: string; width: number; align?: "left" | "right" }>,
+      rows: string[][]
+    ) => void;
+  },
+  financials: OrderFinancialAnalyticsResponse,
+  currency: string
+) {
+  if (!financials.orders.length) return;
+  const s = financials.summary;
+  const fmt = (n: number | null | undefined) => (n == null ? "—" : String(cleanDecimal(n)));
+
+  report.heading(`Order Financial Summary (${currency})`);
+  report.table(
+    [
+      { label: "Metric", width: 280 },
+      { label: `Amount (${currency})`, width: 120, align: "right" },
+    ],
+    [
+      ["Original Total Product Price", fmt(s.originalTotalProductPrice)],
+      ["Total Product + Coupon + Points Discounts", `-${fmt(s.totalProductDiscounts + s.totalCouponDiscount + s.totalPointsDiscount)}`],
+      ["Final Customer Paid", fmt(s.totalCustomerPaid)],
+      ["Total Acquisition Cost", fmt(s.totalCost)],
+      ["Total Platform Commission", fmt(s.totalPlatformCommission)],
+      ["Total Rider Payout", fmt(s.totalRiderPayout)],
+      ["Expected Profit (Without Discounts)", fmt(s.totalProfitWithoutDiscounts)],
+      ["Net Profit (With Discounts)", fmt(s.totalProfitWithDiscounts)],
+    ]
+  );
+
+  report.heading(`Order Financial Breakdown (${currency})`);
+  report.table(
+    [
+      { label: "Order", width: 68 },
+      { label: "Orig.", width: 52, align: "right" },
+      { label: "Disc/Pts", width: 52, align: "right" },
+      { label: "Paid", width: 54, align: "right" },
+      { label: "Cost", width: 50, align: "right" },
+      { label: "Rider (Payer)", width: 88, align: "right" },
+      { label: "P/L NoDisc", width: 66, align: "right" },
+      { label: "P/L Net", width: 66, align: "right" },
+    ],
+    financials.orders.slice(0, 40).map((o) => [
+      o.orderNumber,
+      fmt(o.originalTotalProductPrice),
+      `-${fmt(o.totalProductDiscounts + o.couponDiscount + o.pointsDiscount)}`,
+      fmt(o.finalCustomerPaid),
+      fmt(o.totalCost),
+      `${fmt(o.riderPayout)} (${o.riderPayoutPayer})`,
+      fmt(o.expectedProfitWithoutDiscounts),
+      fmt(o.expectedProfitWithDiscounts),
+    ])
+  );
+
+  const productRows = financials.orders.flatMap((o) =>
+    o.items.map((item) => [
+      o.orderNumber,
+      `${item.title} (x${item.quantity})`,
+      fmt(item.originalTotal),
+      fmt(item.soldTotal),
+      `-${fmt(item.couponDiscountAllocated + item.pointsValueAllocated)}`,
+      fmt(item.totalCost),
+      fmt(item.riderPayoutShare),
+      fmt(item.profitBeforeDiscounts),
+      fmt(item.profitAfterDiscounts),
+    ])
+  );
+
+  if (productRows.length > 0) {
+    report.heading(`Product-Level Financial Calculations (${currency})`);
+    report.table(
+      [
+        { label: "Order", width: 64 },
+        { label: "Product", width: 112 },
+        { label: "Orig.", width: 44, align: "right" },
+        { label: "AfterD", width: 44, align: "right" },
+        { label: "Cpn/Pts", width: 46, align: "right" },
+        { label: "Cost", width: 44, align: "right" },
+        { label: "Rider", width: 42, align: "right" },
+        { label: "P/L NoD", width: 50, align: "right" },
+        { label: "P/L Net", width: 50, align: "right" },
+      ],
+      productRows.slice(0, 80)
+    );
+  }
 }
 
 // ── Rider payout record report ──────────────────────────────────────────────
