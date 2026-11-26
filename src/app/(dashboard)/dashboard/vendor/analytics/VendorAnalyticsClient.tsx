@@ -400,7 +400,7 @@ export default function VendorAnalyticsClient({
           <p className="text-[11px] text-[var(--foreground-muted)]">
             {vendorName ? `${vendorName} · ` : ""}
             {totals.orders} delivered order{totals.orders === 1 ? "" : "s"} worth{" "}
-            {formatPrice(totals.revenue, currency, { showDecimals: false })} in the last {report.range} days
+            {formatPrice(totals.revenue, currency)} in the last {report.range} days
           </p>
         </header>
 
@@ -490,7 +490,7 @@ export default function VendorAnalyticsClient({
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Tile
           label="Revenue earned"
-          value={formatPrice(totals.revenue, currency, { showDecimals: false })}
+          value={formatPrice(totals.revenue, currency)}
           icon={Wallet}
           highlight
           note={
@@ -509,7 +509,7 @@ export default function VendorAnalyticsClient({
                 ) : (
                   <ArrowDownRight className="h-3 w-3" />
                 )}
-                {Math.abs(previous.revenueChange)}% vs {formatPrice(previous.revenue, currency, { showDecimals: false })}
+                {Math.abs(previous.revenueChange)}% vs {formatPrice(previous.revenue, currency)}
               </span>
             )
           }
@@ -540,7 +540,7 @@ export default function VendorAnalyticsClient({
             />
             <Tile
               label="Net payout"
-              value={formatPrice(totals.netPayout, currency, { showDecimals: false })}
+              value={formatPrice(totals.netPayout, currency)}
               icon={Wallet}
               highlight
               note="What is yours after commission and any delivery fee"
@@ -561,7 +561,7 @@ export default function VendorAnalyticsClient({
           <>
             <Tile
               label="On the way"
-              value={formatPrice(totals.inFlight, currency, { showDecimals: false })}
+              value={formatPrice(totals.inFlight, currency)}
               icon={Package}
               note="Ready or shipped — not earned yet"
             />
@@ -701,19 +701,19 @@ export default function VendorAnalyticsClient({
           <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Tile
               label="Cost of goods"
-              value={formatPrice(profit.cost, currency, { showDecimals: false })}
+              value={formatPrice(profit.cost, currency)}
               icon={ShoppingCart}
               note={`${totals.units} delivered unit${totals.units === 1 ? "" : "s"} priced`}
             />
             <Tile
               label="Gross profit"
-              value={formatPrice(profit.profit, currency, { showDecimals: false })}
+              value={formatPrice(profit.profit, currency)}
               icon={Wallet}
               highlight
               note={
                 profit.previousProfit === null
                   ? "No delivered orders in the window before"
-                  : `Previous window ${formatPrice(profit.previousProfit, currency, { showDecimals: false })}`
+                  : `Previous window ${formatPrice(profit.previousProfit, currency)}`
               }
             />
             <Tile
@@ -952,7 +952,7 @@ export default function VendorAnalyticsClient({
                     </span>
                   </span>
                   <span className="shrink-0 text-[11px] font-bold text-[var(--foreground)]">
-                    {formatPrice(product.revenue, currency, { showDecimals: false })}
+                    {formatPrice(product.revenue, currency)}
                   </span>
                 </li>
               ))}
@@ -1137,7 +1137,7 @@ export default function VendorAnalyticsClient({
                       <td className="px-4 py-3 text-[var(--foreground-muted)]">{order.city || "—"}</td>
                       <td className="px-4 py-3 text-[var(--foreground-muted)]">{order.units}</td>
                       <td className="px-4 py-3 text-right font-bold text-[var(--foreground)]">
-                        {formatPrice(order.subtotal, currency, { showDecimals: false })}
+                        {formatPrice(order.subtotal, currency)}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-[var(--foreground-muted)]">
                         {formatOrderDate(order.placedAt)}
@@ -1208,7 +1208,7 @@ export default function VendorAnalyticsClient({
             : "The fee is taken from what its own lines earned and stops at that figure: a parcel that cost more to deliver than it made is the store team's loss, never a debt on your shop. "}
           {report.delivery.billed === 0
             ? "No delivery fee was charged on this window's parcels."
-            : `${formatPrice(report.delivery.billed, currency, { showDecimals: false })} was charged across the parcels this window earned.`}
+            : `${formatPrice(report.delivery.billed, currency)} was charged across the parcels this window earned.`}
         </p>
       </section>
 
@@ -1216,13 +1216,13 @@ export default function VendorAnalyticsClient({
       <section className="rounded-2xl border border-[var(--border-color)] bg-[var(--surface-alt)] p-5 shadow-2xs">
         <h2 className="text-sm font-bold text-[var(--foreground)]">How this window settles</h2>
         <p className="mt-1 text-[11px] leading-relaxed text-[var(--foreground-muted)]">
-          {formatPrice(totals.revenue, currency, { showDecimals: false })} earned ·{" "}
+          {formatPrice(totals.revenue, currency)} earned ·{" "}
           {totals.commission}% platform commission is {formatPrice(totals.commissionTaken, currency)},
           leaving <span className="font-bold text-[var(--foreground)]">{formatPrice(totals.netPayout, currency)}</span>{" "}
           for your shop.
           {totals.deliveryFee > 0 &&
             ` The delivery fee took ${formatPrice(totals.deliveryFee, currency)} of that, with ${formatPrice(totals.deliveryFeeAbsorbed, currency)} carried by the store team.`}{" "}
-          {formatPrice(totals.inFlight, currency, { showDecimals: false })} worth of
+          {formatPrice(totals.inFlight, currency)} worth of
           groups are still on the way and are not counted here. Settlement runs on the schedule in{" "}
           <Link href="/dashboard/vendor/subscription" className="font-bold underline">
             Plan &amp; billing
