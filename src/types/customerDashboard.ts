@@ -58,6 +58,7 @@ export interface CustomerOrderItem {
   slug: string;
   image: string;
   price: number;
+  originalPrice?: number;
   quantity: number;
   inStock?: boolean;
   /** null means the product is not stock-tracked. */
@@ -84,8 +85,15 @@ export interface CustomerOrder {
    */
   paymentStatus?: "Paid" | "Pending" | "Failed" | "Refunded";
   paymentMethod: string;
+  subtotal?: number;
+  shippingFee?: number;
   total: number;
   itemCount: number;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  riderName?: string;
+  riderPhone?: string;
   /** Loyalty points spent on this order, and the money they saved. */
   pointsRedeemed?: number;
   pointsDiscount?: number;
