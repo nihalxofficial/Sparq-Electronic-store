@@ -628,6 +628,14 @@ Cancelling a paid order marks its payment **refunded**.
 
 ## Recent Changes
 
+- **Order-level financial analytics & modal:** Admin and Premium/Advanced vendors get per-order and per-product financial breakdowns (original price, discounts, coupon/points allocations, cost, commission, rider payout responsibility, Admin/Vendor profit split, and before/after discount P/L) in a responsive HeroUI v3 modal, with strict backend plan gating and vendor isolation.
+- **PDF & CSV financial exports:** Admin and eligible Vendor PDF and CSV analytics reports include order-level financial summaries and product-level calculation tables.
+- **Strict coupon ownership:** Admin coupons only list, select, and apply to store-owned products (vendor products are excluded even on category selection); vendor coupons apply only to that vendor's products.
+- **Product archive & delete permissions:** Admin can archive any product and delete only store-owned products (never vendor-owned); vendors can archive and permanently delete their own products. Archive ownership (`archivedBy`) prevents cross-unarchiving.
+- **Decimal-safe financial precision:** Preserved decimal precision across pricing, analytics, payouts, and exports without intermediate rounding.
+- **Rider code verification reliability:** Added timeout handling, duplicate-submit protection, and retry states on delivery OTP verification.
+- **User order PDF invoice:** Fixed overlapping totals, added customer/rider/item-discount details, text wrapping, repeated table headers, and consistent multi-page footers.
+- **Hero banners & promo images:** Moved hero banner add/edit to dedicated pages with searchable product/vendor pickers and HeroUI v3 date-time pickers; fixed promo banner image loading.
 - **Cron on Vercel Hobby:** the backend runs one daily sweep (`/api/cron/daily`) instead of seven cron jobs, because Hobby allows only daily jobs.
 - **Vendor storefront:** a products-first shop page — a sticky record column beside the shelf, three products per row.
 - **Vendor directory cards:** bigger, clearer cards with a cover, an overlapping logo, a stats strip and a Visit-shop footer.
