@@ -15,29 +15,16 @@ import {
   Pencil,
   Plus,
   TriangleAlert,
-  Clock,
-  Sparkles,
-  Tag,
-  Check,
-  X,
-  Shield,
-  FileText,
-  DollarSign,
-  Layers,
-  Sparkle,
   Send,
   Trash2,
 } from "lucide-react";
 import {
   Modal,
-  Input,
   Button,
-  Select,
-  ListBox,
 } from "@heroui/react";
 import { toast } from "react-toastify";
 import CatalogFiltersBar from "@/components/dashboard/CatalogFiltersBar";
-import type { VendorPagination, VendorProduct, VendorProductPlan } from "@/types/vendor";
+import type { VendorPagination, VendorProduct, VendorProductDraft, VendorProductPlan } from "@/types/vendor";
 import type { Category, SubCategory } from "@/types";
 import { getVendorProductStatusStyle } from "@/lib/vendorProductStatus";
 import {
@@ -48,10 +35,7 @@ import {
   updateVendorProduct,
 } from "@/lib/action/vendor";
 import { useSiteSettings } from "@/context/SiteSettingsContext";
-import { recalcPricing } from "@/lib/pricing";
-import { WARRANTY_TYPE_OPTIONS } from "@/lib/warranty";
-import ImageUploader from "@/components/shared/ImageUploader";
-import HeroUIDateTimePicker from "@/components/shared/HeroUIDateTimePicker";
+import ProductEditModal from "@/components/dashboard/ProductEditModal";
 
 /**
  * The vendor's catalogue.
@@ -111,7 +95,7 @@ export default function VendorProductsClient({
   initialEditId,
 }: VendorProductsClientProps) {
   const router = useRouter();
-  const { formatPrice, currencySymbol } = useSiteSettings();
+  const { formatPrice } = useSiteSettings();
   const [archiving, setArchiving] = useState<string | null>(null);
   // A review move (submit or withdraw) is its own busy flag, so the archive
   // buttons stay usable while a submission is in flight.
@@ -140,177 +124,19 @@ export default function VendorProductsClient({
 
   // ── Edit Modal State ──
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editingProductId, setEditingProductId] = useState<string | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [editForm, setEditForm] = useState({
-    title: "",
-    slug: "",
-    price: "",
-    originalPrice: "",
-    investPrice: "",
-    discountPercentage: "",
-    stockQuantity: "",
-    sku: "",
-    brand: "",
-    description: "",
-    image: "",
-    additionalImages: [] as string[],
-    categoryId: "",
-    subCategoryIds: new Set<string>(),
-    offerEndDate: null as string | null,
-    warrantyType: "none",
-    warrantyPeriodMonths: 0,
-    warrantyTerms: "",
-  });
-
-  const editAvailableSubCategories = useMemo(() => {
-    if (!editForm.categoryId) return [];
-    return subcategories.filter(
-      (sub) =>
-        sub.categoryId === editForm.categoryId ||
-        String(sub.categoryId) === String(editForm.categoryId)
-    );
-  }, [editForm.categoryId, subcategories]);
+  const [editingProduct, setEditingProduct] = useState<VendorProduct | null>(null);
 
   const handleOpenEdit = (p: VendorProduct) => {
-    const id = p._id || p.id || "";
-    setEditingProductId(id);
-
-    let catId = "";
-    if (p.categoryId) {
-      if (typeof p.categoryId === "object" && (p.categoryId as any)._id) {
-        catId = (p.categoryId as any)._id;
-      } else if (typeof p.categoryId === "string") {
-        catId = p.categoryId;
-      }
-    }
-
-    const subIds = new Set<string>();
-    if (Array.isArray(p.subCategoryIds)) {
-      p.subCategoryIds.forEach((s) => {
-        const sid = typeof s === "object" ? s._id || s.id : s;
-        if (sid) subIds.add(String(sid));
-      });
-    }
-
-    const calc = recalcPricing(
-      {
-        price: p.price != null ? String(p.price) : "",
-        originalPrice: p.originalPrice != null ? String(p.originalPrice) : "",
-        discountPercentage: "",
-      },
-      "price"
-    );
-
-    setEditForm({
-      title: p.title || "",
-      slug: p.slug || "",
-      price: p.price != null ? String(p.price) : "",
-      originalPrice: p.originalPrice != null ? String(p.originalPrice) : "",
-      investPrice: p.investPrice != null ? String(p.investPrice) : "",
-      discountPercentage: calc.discountPercentage != null ? String(calc.discountPercentage) : "",
-      stockQuantity: p.stockQuantity != null ? String(p.stockQuantity) : "",
-      sku: p.sku || "",
-      brand: p.brand || "",
-      description: p.description || "",
-      image: p.image || "",
-      additionalImages: Array.isArray(p.additionalImages) ? [...p.additionalImages] : [],
-      categoryId: catId,
-      subCategoryIds: subIds,
-      offerEndDate: (p as any).offerEndDate ? new Date((p as any).offerEndDate).toISOString() : null,
-      warrantyType: (p as any).warrantyType || "none",
-      warrantyPeriodMonths: (p as any).warrantyPeriodMonths || 0,
-      warrantyTerms: (p as any).warrantyTerms || "",
-    });
-
+    setEditingProduct(p);
     setIsEditOpen(true);
   };
 
   useEffect(() => {
     if (initialEditId) {
       const match = products.find((p) => p._id === initialEditId || p.id === initialEditId);
-      if (match) {
-        handleOpenEdit(match);
-      }
+      if (match) handleOpenEdit(match);
     }
   }, [initialEditId, products]);
-
-  const handlePriceChange = (val: string) => {
-    const calc = recalcPricing(
-      { price: val, originalPrice: editForm.originalPrice, discountPercentage: "" },
-      "price"
-    );
-    setEditForm((prev) => ({
-      ...prev,
-      price: val,
-      discountPercentage: calc.discountPercentage != null ? String(calc.discountPercentage) : "",
-    }));
-  };
-
-  const handleOriginalPriceChange = (val: string) => {
-    const calc = recalcPricing(
-      { price: editForm.price, originalPrice: val, discountPercentage: "" },
-      "originalPrice"
-    );
-    setEditForm((prev) => ({
-      ...prev,
-      originalPrice: val,
-      discountPercentage: calc.discountPercentage != null ? String(calc.discountPercentage) : "",
-    }));
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editingProductId) return;
-    if (!editForm.title.trim()) {
-      toast.error("Product title is required.");
-      return;
-    }
-    if (!editForm.price || Number(editForm.price) <= 0) {
-      toast.error("Valid selling price is required.");
-      return;
-    }
-    if (!editForm.image) {
-      toast.error("Primary thumbnail image is required.");
-      return;
-    }
-
-    setIsUpdating(true);
-    try {
-      const payload: any = {
-        title: editForm.title.trim(),
-        slug: editForm.slug.trim() || undefined,
-        price: Number(editForm.price),
-        originalPrice: editForm.originalPrice ? Number(editForm.originalPrice) : null,
-        investPrice: editForm.investPrice ? Number(editForm.investPrice) : null,
-        stockQuantity: editForm.stockQuantity !== "" ? Number(editForm.stockQuantity) : null,
-        sku: editForm.sku.trim() || undefined,
-        brand: editForm.brand.trim() || undefined,
-        description: editForm.description.trim() || undefined,
-        image: editForm.image,
-        additionalImages: editForm.additionalImages,
-        categoryId: editForm.categoryId || undefined,
-        subCategoryIds: Array.from(editForm.subCategoryIds),
-        offerEndDate: editForm.offerEndDate,
-        warrantyType: editForm.warrantyType,
-        warrantyPeriodMonths: Number(editForm.warrantyPeriodMonths) || 0,
-        warrantyTerms: editForm.warrantyTerms.trim() || undefined,
-      };
-
-      const res = await updateVendorProduct(editingProductId, payload);
-      if (res?.success === false) {
-        toast.error(res.message || "Failed to update product");
-        return;
-      }
-
-      toast.success("Product updated successfully!");
-      setIsEditOpen(false);
-      router.refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Error updating product");
-    } finally {
-      setIsUpdating(false);
-    }
-  };
 
   const atLimit = plan.used >= plan.maxProducts;
 
@@ -766,382 +592,26 @@ export default function VendorProductsClient({
         </div>
       )}
 
-      {/* ════════════════════════════════════════════════════════
-          VENDOR EDIT PRODUCT MODAL (Matching Admin Modal)
-      ════════════════════════════════════════════════════════ */}
-      <Modal isOpen={isEditOpen} onOpenChange={setIsEditOpen}>
-        <Modal.Backdrop>
-          <Modal.Container size="lg">
-            <Modal.Dialog className="bg-[var(--surface-elevated)] border border-[var(--border-color)] rounded-3xl p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto text-[var(--foreground)]">
-              {/* Header */}
-              <div className="flex items-center justify-between border-b border-[var(--border-color)] pb-4">
-                <div>
-                  <h2 className="text-lg font-extrabold text-[var(--foreground)]">
-                    Edit Product
-                  </h2>
-                  <p className="text-xs text-[var(--foreground-muted)]">
-                    Update listing information, pricing, media and warranty.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsEditOpen(false)}
-                  className="p-1 rounded-lg text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-alt)] transition-colors cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Form Content */}
-              <div className="space-y-6">
-                {/* 1. Core Info */}
-                <div className="space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-primary">
-                    Basic Information
-                  </h3>
-                  <div>
-                    <label className="text-xs font-semibold text-[var(--foreground)] block mb-1">
-                      Product Title <span className="text-rose-500">*</span>
-                    </label>
-                    <Input
-                      type="text"
-                      value={editForm.title}
-                      onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
-                      placeholder="e.g. Wireless Noise Cancelling Headphones"
-                      className="w-full bg-[var(--surface-alt)]"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--foreground)] block mb-1">
-                        URL Slug
-                      </label>
-                      <Input
-                        type="text"
-                        value={editForm.slug}
-                        onChange={(e) => setEditForm((prev) => ({ ...prev, slug: e.target.value }))}
-                        placeholder="auto-generated-from-title"
-                        className="w-full bg-[var(--surface-alt)]"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--foreground)] block mb-1">
-                        SKU
-                      </label>
-                      <Input
-                        type="text"
-                        value={editForm.sku}
-                        onChange={(e) => setEditForm((prev) => ({ ...prev, sku: e.target.value }))}
-                        placeholder="e.g. WH-1000XM4"
-                        className="w-full bg-[var(--surface-alt)]"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. Taxonomy */}
-                <div className="space-y-4 pt-4 border-t border-[var(--border-color)]">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-primary">
-                    Category & Subcategories
-                  </h3>
-                  <div>
-                    <label className="text-xs font-semibold text-[var(--foreground)] block mb-1">
-                      Category
-                    </label>
-                    <Select
-                      selectedKey={editForm.categoryId || null}
-                      onSelectionChange={(key) => {
-                        const sel = key ? String(key) : "";
-                        setEditForm((prev) => ({
-                          ...prev,
-                          categoryId: sel,
-                          subCategoryIds: new Set<string>(),
-                        }));
-                      }}
-                      placeholder="Select Category"
-                      className="w-full"
-                    >
-                      <Select.Trigger className="w-full bg-[var(--surface-alt)] border border-[var(--border-color)] rounded-xl px-3 py-2 text-xs flex justify-between items-center text-[var(--foreground)]">
-                        <Select.Value />
-                      </Select.Trigger>
-                      <Select.Popover className="bg-[var(--surface-elevated)] border border-[var(--border-color)] rounded-xl shadow-xl z-50 p-1">
-                        <ListBox className="max-h-60 overflow-y-auto">
-                          {categories.map((c) => {
-                            const cId = c.id || (c as any)._id;
-                            return (
-                              <ListBox.Item
-                                key={cId}
-                                id={cId}
-                                textValue={c.name}
-                                className="px-3 py-2 text-xs rounded-lg hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer text-[var(--foreground)]"
-                              >
-                                {c.name}
-                              </ListBox.Item>
-                            );
-                          })}
-                        </ListBox>
-                      </Select.Popover>
-                    </Select>
-                  </div>
-
-                  {editAvailableSubCategories.length > 0 && (
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--foreground)] block mb-1.5">
-                        Subcategories
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        {editAvailableSubCategories.map((sub) => {
-                          const subId = sub.id || (sub as any)._id;
-                          const isSelected = editForm.subCategoryIds.has(subId);
-                          return (
-                            <button
-                              type="button"
-                              key={subId}
-                              onClick={() => {
-                                const next = new Set(editForm.subCategoryIds);
-                                if (isSelected) next.delete(subId);
-                                else next.add(subId);
-                                setEditForm((prev) => ({ ...prev, subCategoryIds: next }));
-                              }}
-                              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                                isSelected
-                                  ? "bg-[var(--accent)] text-[var(--on-accent)] shadow-2xs"
-                                  : "bg-[var(--surface-alt)] text-[var(--foreground)] hover:bg-[var(--surface-elevated)] border border-[var(--border-color)]"
-                              }`}
-                            >
-                              {sub.name}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* 3. Pricing & Inventory */}
-                <div className="space-y-4 pt-4 border-t border-[var(--border-color)]">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-primary">
-                    Pricing & Inventory ({currencySymbol})
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--foreground)] block mb-1">
-                        Selling Price ({currencySymbol}) <span className="text-rose-500">*</span>
-                      </label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={editForm.price}
-                        onChange={(e) => handlePriceChange(e.target.value)}
-                        placeholder="0.00"
-                        className="w-full bg-[var(--surface-alt)]"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--foreground)] block mb-1">
-                        Original / MSRP ({currencySymbol})
-                      </label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={editForm.originalPrice}
-                        onChange={(e) => handleOriginalPriceChange(e.target.value)}
-                        placeholder="0.00"
-                        className="w-full bg-[var(--surface-alt)]"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--foreground)] block mb-1">
-                        Cost / Invest Price ({currencySymbol})
-                      </label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={editForm.investPrice}
-                        onChange={(e) => setEditForm((prev) => ({ ...prev, investPrice: e.target.value }))}
-                        placeholder="0.00"
-                        className="w-full bg-[var(--surface-alt)]"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--foreground)] block mb-1">
-                        Stock Quantity
-                      </label>
-                      <Input
-                        type="number"
-                        min="0"
-                        step="1"
-                        value={editForm.stockQuantity}
-                        onChange={(e) => setEditForm((prev) => ({ ...prev, stockQuantity: e.target.value }))}
-                        placeholder="Leave blank for untracked"
-                        className="w-full bg-[var(--surface-alt)]"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--foreground)] block mb-1">
-                        Brand
-                      </label>
-                      <Input
-                        type="text"
-                        value={editForm.brand}
-                        onChange={(e) => setEditForm((prev) => ({ ...prev, brand: e.target.value }))}
-                        placeholder="e.g. Sony, Apple, Samsung"
-                        className="w-full bg-[var(--surface-alt)]"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4. Product Media */}
-                <div className="space-y-4 pt-4 border-t border-[var(--border-color)]">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-primary">
-                    Product Media
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <ImageUploader
-                        label="Thumbnail (Primary)"
-                        value={editForm.image}
-                        onChange={(url) => setEditForm((prev) => ({ ...prev, image: url }))}
-                        hint="Recommended: 800 × 800 px (1:1 Square, JPG/PNG/WebP, max 2MB)."
-                      />
-                    </div>
-                    <div>
-                      <ImageUploader
-                        label="Gallery Image"
-                        value={editForm.additionalImages[0] || ""}
-                        onChange={(url) =>
-                          setEditForm((prev) => ({
-                            ...prev,
-                            additionalImages: url ? [url] : [],
-                          }))
-                        }
-                        hint="Recommended: 800 × 800 px (1:1 Square, JPG/PNG/WebP). Clean product preview."
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 5. Limited-Time Offer */}
-                <div className="space-y-4 pt-4 border-t border-[var(--border-color)]">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-primary">
-                    Limited-Time Offer
-                  </h3>
-
-                  <div>
-                    <label className="text-xs font-semibold text-[var(--foreground)] block mb-1">
-                      Offer Countdown Timer
-                    </label>
-                    <HeroUIDateTimePicker
-                      value={editForm.offerEndDate}
-                      onChange={(iso) => setEditForm((prev) => ({ ...prev, offerEndDate: iso }))}
-                    />
-                  </div>
-                </div>
-
-                {/* 6. Warranty */}
-                <div className="space-y-4 pt-4 border-t border-[var(--border-color)]">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-primary">
-                    Warranty
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--foreground)] block mb-1">
-                        Warranty Type
-                      </label>
-                      <Select
-                        selectedKey={editForm.warrantyType || "none"}
-                        onSelectionChange={(key) => {
-                          const sel = key ? String(key) : "none";
-                          setEditForm((prev) => ({ ...prev, warrantyType: sel }));
-                        }}
-                        className="w-full"
-                      >
-                        <Select.Trigger className="w-full bg-[var(--surface-alt)] border border-[var(--border-color)] rounded-xl px-3 py-2 text-xs flex justify-between items-center text-[var(--foreground)]">
-                          <Select.Value />
-                        </Select.Trigger>
-                        <Select.Popover className="bg-[var(--surface-elevated)] border border-[var(--border-color)] rounded-xl shadow-xl z-50 p-1">
-                          <ListBox className="max-h-60 overflow-y-auto">
-                            {WARRANTY_TYPE_OPTIONS.map((opt) => (
-                              <ListBox.Item
-                                key={opt.value}
-                                id={opt.value}
-                                textValue={opt.label}
-                                className="px-3 py-2 text-xs rounded-lg hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer text-[var(--foreground)]"
-                              >
-                                {opt.label}
-                              </ListBox.Item>
-                            ))}
-                          </ListBox>
-                        </Select.Popover>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <label className="text-xs font-semibold text-[var(--foreground)] block mb-1">
-                        Period (Months)
-                      </label>
-                      <Input
-                        type="number"
-                        min="0"
-                        max="120"
-                        value={String(editForm.warrantyPeriodMonths)}
-                        onChange={(e) =>
-                          setEditForm((prev) => ({
-                            ...prev,
-                            warrantyPeriodMonths: Number(e.target.value) || 0,
-                          }))
-                        }
-                        className="w-full bg-[var(--surface-alt)]"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 7. Description */}
-                <div className="space-y-4 pt-4 border-t border-[var(--border-color)]">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-primary">
-                    Description
-                  </h3>
-                  <textarea
-                    rows={4}
-                    value={editForm.description}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
-                    placeholder="Enter detailed product description..."
-                    className="w-full rounded-2xl border border-[var(--border-color)] bg-[var(--surface-alt)] p-3 text-xs text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] outline-none focus:border-primary transition"
-                  />
-                </div>
-              </div>
-
-              {/* Actions Footer */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--border-color)]">
-                <Button
-                  type="button"
-                  onPress={() => setIsEditOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-[var(--border-color)] bg-[var(--surface-alt)] text-xs font-bold text-[var(--foreground)] hover:bg-[var(--surface-elevated)] transition cursor-pointer"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  onPress={handleSaveEdit}
-                  isDisabled={isUpdating}
-                  className="px-5 py-2 rounded-xl bg-primary text-white text-xs font-bold shadow-sm hover:opacity-90 transition cursor-pointer"
-                >
-                  {isUpdating ? "Saving..." : "Save Changes"}
-                </Button>
-              </div>
-            </Modal.Dialog>
-          </Modal.Container>
-        </Modal.Backdrop>
-      </Modal>
+      {/* Edit Product Modal — the same shared form the store team uses */}
+      <ProductEditModal
+        isOpen={isEditOpen}
+        onOpenChange={setIsEditOpen}
+        product={editingProduct}
+        categories={categories}
+        subcategories={subcategories}
+        mode="vendor"
+        onSave={async (id, payload) => {
+          const res = await updateVendorProduct(
+            id,
+            payload as unknown as Partial<VendorProductDraft>
+          );
+          if (res?.success !== false) {
+            toast.success("Product updated successfully!");
+            router.refresh();
+          }
+          return res;
+        }}
+      />
 
       {/* Delete Confirmation Modal */}
       <Modal
