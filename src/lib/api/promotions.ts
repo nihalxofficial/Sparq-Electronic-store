@@ -48,3 +48,21 @@ export const getVendorPlanWindows = async (): Promise<VendorPlanWindow[]> => {
   const rows = (res as { data?: VendorPlanWindow[] } | null)?.data;
   return Array.isArray(rows) ? rows : [];
 };
+
+/** A seller's points and where they came from. */
+export type VendorPoints = {
+  perUnit: number;
+  sellPoints: number;
+  soldUnits: number;
+  placementPoints: number;
+  totalPoints: number;
+  position: number;
+  totalVendors: number;
+  products: { productId: string; title: string; units: number; points: number }[];
+};
+
+/** The signed-in seller's points: sell, placement, total, and their position. */
+export const getMyVendorPoints = async (): Promise<VendorPoints | null> => {
+  const res = await serverFetch("/vendor-promotions/points", true);
+  return (res as { data?: VendorPoints } | null)?.data ?? null;
+};

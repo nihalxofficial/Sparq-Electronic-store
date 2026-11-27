@@ -1081,6 +1081,9 @@ export default function AdminSettingsClient({
   const [placementPerDay, setPlacementPerDay] = useState(
     String(current.vendorPlacementPoints?.perDay ?? 1)
   );
+  const [placementSellPerUnit, setPlacementSellPerUnit] = useState(
+    String(current.vendorPlacementPoints?.sellPerUnit ?? 10)
+  );
 
   // ── Admin password change (better-auth) ──
   // The admin changes their own sign-in password here, the same way a customer
@@ -1341,6 +1344,7 @@ export default function AdminSettingsClient({
             advanced: Number(placementAdvanced) || 0,
             yearlyBonus: Number(placementYearlyBonus) || 0,
             perDay: Number(placementPerDay) || 0,
+            sellPerUnit: Number(placementSellPerUnit) || 0,
           },
           topBarEnabled,
           topBarText,
@@ -3216,9 +3220,26 @@ export default function AdminSettingsClient({
                 <label className="text-xs font-semibold text-[var(--foreground-secondary)]">Points per day</label>
                 <Input type="number" min={0} value={placementPerDay} onChange={(e) => setPlacementPerDay(e.target.value)} />
               </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--foreground-secondary)]">Points per unit sold</label>
+                <Input type="number" min={0} value={placementSellPerUnit} onChange={(e) => setPlacementSellPerUnit(e.target.value)} />
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-3 gap-2 text-[10px] text-[var(--foreground-muted)]">
+              {[
+                { label: "Basic", base: Number(placementBasic) || 0 },
+                { label: "Detailed", base: Number(placementDetailed) || 0 },
+                { label: "Advanced", base: Number(placementAdvanced) || 0 },
+              ].map((tier) => (
+                <div key={tier.label} className="rounded-lg border border-[var(--border-color)] bg-[var(--surface)] px-2 py-1.5">
+                  <p className="font-bold text-[var(--foreground)]">{tier.label}</p>
+                  <p>Monthly {tier.base.toLocaleString()}</p>
+                  <p>Yearly {(tier.base + (Number(placementYearlyBonus) || 0)).toLocaleString()}</p>
+                </div>
+              ))}
             </div>
             <p className="mt-2 text-[10px] text-[var(--foreground-muted)]">
-              A placement earns its plan's points, plus the yearly bonus, plus the per-day points times its length. A longer pin on a higher plan leads the shelf.
+              A placement earns its plan's points plus the yearly bonus, plus {Number(placementPerDay) || 0}/day. A seller also earns {Number(placementSellPerUnit) || 0} points for each unit sold.
             </p>
           </SettingCard>
         </div>

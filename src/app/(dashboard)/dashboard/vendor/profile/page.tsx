@@ -4,6 +4,7 @@ import { ArrowRight, Store } from "lucide-react";
 import { getRequiredRole } from "@/lib/core/session";
 import { asApplication, getMyVendorApplication } from "@/lib/api/vendor";
 import { asStore, getMyStore } from "@/lib/api/vendorStore";
+import { getMyVendorPoints } from "@/lib/api/promotions";
 import StoreProfileClient from "./StoreProfileClient";
 
 export const dynamic = "force-dynamic";
@@ -45,9 +46,10 @@ function asDay(value?: string | null): string {
 export default async function VendorStoreProfilePage() {
   await getRequiredRole("vendor");
 
-  const [storeResponse, applicationResponse] = await Promise.all([
+  const [storeResponse, applicationResponse, points] = await Promise.all([
     getMyStore().catch(() => null),
     getMyVendorApplication().catch(() => null),
+    getMyVendorPoints().catch(() => null),
   ]);
 
   const store = asStore(storeResponse);
@@ -87,6 +89,33 @@ export default async function VendorStoreProfilePage() {
   return (
     <div className="space-y-5">
       <StoreProfileClient store={store} application={application} />
+
+      {/* Points — the seller's own total and where it came from. */}
+      {points && (
+        <section className="rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] p-4 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <h2 className="text-[11px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
+              Points
+            </h2>
+            <span className="rounded-md bg-[var(--surface-alt)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
+              Position {points.position} of {points.totalVendors}
+            </span>
+          </div>
+          <p className="mt-2 text-xl font-black text-[var(--foreground)]">
+            {points.totalPoints.toLocaleString()}
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] text-[var(--foreground-muted)]">
+            <div className="rounded-lg bg-[var(--surface)] px-2 py-1.5">
+              <p className="font-bold text-[var(--foreground)]">{points.sellPoints.toLocaleString()}</p>
+              <p>from {points.soldUnits.toLocaleString()} units sold</p>
+            </div>
+            <div className="rounded-lg bg-[var(--surface)] px-2 py-1.5">
+              <p className="font-bold text-[var(--foreground)]">{points.placementPoints.toLocaleString()}</p>
+              <p>from featured placements</p>
+            </div>
+          </div>
+        </section>
+      )}
 
       {application && (
         <section className="rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] p-4 shadow-2xs">

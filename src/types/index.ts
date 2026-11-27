@@ -342,6 +342,7 @@ export interface SiteSettingsData {
     advanced?: number;
     yearlyBonus?: number;
     perDay?: number;
+    sellPerUnit?: number;
   };
   footerCopyright: string;
 }

@@ -19,6 +19,7 @@ import { asSubscription, getMySubscription } from "@/lib/api/vendorSubscription"
 import { asOrderSummary, getMyOrderSummary } from "@/lib/api/vendorOrders";
 import { getSiteSettings } from "@/lib/api/siteSettings";
 import { getVendorOrderFinancials } from "@/lib/api/financials";
+import { getMyVendorPoints } from "@/lib/api/promotions";
 import { formatOrderDate } from "@/lib/dateTime";
 import { formatPrice } from "@/lib/currency";
 import { isPaidPlan, planPrice } from "@/lib/vendorPlan";
@@ -36,7 +37,7 @@ export const dynamic = "force-dynamic";
 export default async function VendorOverviewPage() {
   const user = await getRequiredRole("vendor");
 
-  const [storeRes, application, subscriptionOverview, orderSummary, settingsRes, financeRes] = await Promise.all([
+  const [storeRes, application, subscriptionOverview, orderSummary, settingsRes, financeRes, pointsRes] = await Promise.all([
     getMyStore().then(asStore).catch(() => null),
     getMyVendorApplication().then(asApplication).catch(() => null),
     getMySubscription().then(asSubscription).catch(() => null),
@@ -46,6 +47,8 @@ export default async function VendorOverviewPage() {
     // plan is refused by the API, so this simply resolves to null and the cards
     // stay hidden rather than showing a guessed number.
     getVendorOrderFinancials({ days: 30, limit: 1 }).catch(() => null),
+    // Points: sell points plus placement points, and the shop's position.
+    getMyVendorPoints().catch(() => null),
   ]);
 
   const currency = settingsRes?.data?.currency;
@@ -245,6 +248,23 @@ export default async function VendorOverviewPage() {
                 Profit / Loss (30d)
               </p>
             </div>
+          </div>
+        )}
+
+        {/* Points — sell points + placement points, and the shop's position */}
+        {pointsRes && (
+          <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2">
+            <div>
+              <p className="text-base font-bold text-[var(--foreground)]">
+                {pointsRes.totalPoints.toLocaleString()}
+              </p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--foreground-muted)]">
+                Points · {pointsRes.sellPoints.toLocaleString()} sold · {pointsRes.placementPoints.toLocaleString()} placement
+              </p>
+            </div>
+            <span className="shrink-0 rounded-md bg-[var(--surface-alt)] px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
+              Position {pointsRes.position} of {pointsRes.totalVendors}
+            </span>
           </div>
         )}
 
