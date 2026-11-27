@@ -18,6 +18,7 @@ import {
 import { toast } from "react-toastify";
 import ImageUploader from "@/components/shared/ImageUploader";
 import HeroUIDateTimePicker from "@/components/shared/HeroUIDateTimePicker";
+import AppSelect from "@/components/shared/AppSelect";
 import { addBanner, updateBanner } from "@/lib/action/banners";
 import { normalizeImageUrl } from "@/lib/imageUrl";
 import type { Banner, BannerType } from "@/types/banner";
@@ -359,18 +360,17 @@ export default function HeroBannerForm({
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
                     Sort
                   </span>
-                  <select
+                  <AppSelect
                     value={targetSort}
-                    onChange={(e) =>
-                      setTargetSort(e.target.value as "points" | "name" | "plan")
-                    }
-                    className="h-8 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] px-2 text-[11px] text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-flat)]/35 cursor-pointer"
-                    aria-label="Sort the picker"
-                  >
-                    <option value="points">Placement points (high to low)</option>
-                    <option value="name">Name (A-Z)</option>
-                    <option value="plan">Plan</option>
-                  </select>
+                    onChange={(v) => setTargetSort(v as "points" | "name" | "plan")}
+                    options={[
+                      { value: "points", label: "Placement points (high to low)" },
+                      { value: "name", label: "Name (A-Z)" },
+                      { value: "plan", label: "Plan" },
+                    ]}
+                    size="sm"
+                    ariaLabel="Sort the picker"
+                  />
                 </div>
               )}
 
