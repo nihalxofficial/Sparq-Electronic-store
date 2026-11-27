@@ -145,6 +145,8 @@ export interface RawOrder {
     price?: number;
     quantity?: number;
     image?: string;
+    /** The cost per unit frozen onto the line at checkout. */
+    unitCost?: number | null;
   }>;
   shippingAddress?: {
     fullName?: string;
@@ -416,13 +418,21 @@ export function aggregateAdminDashboard(
             : "Uncategorized";
         const prodSlug = typeof item.productId === "object" ? item.productId?.slug : undefined;
 
-        // Try to get investPrice from populated productId or productMap
+        // The cost is the one frozen on the line at checkout, so editing a
+        // product's cost price today cannot re-price an order that already
+        // shipped. The product's current invest price is only a fallback for
+        // lines that predate the frozen figure.
         const populatedProd = typeof item.productId === "object" ? item.productId : null;
         const investPriceRaw =
           populatedProd?.investPrice ??
           (pid ? productMap[String(pid)]?.investPrice : undefined);
         const investPrice = investPriceRaw != null ? Number(investPriceRaw) : undefined;
-        const itemCost = investPrice != null ? investPrice * qty : 0;
+        const frozenUnitCost =
+          item.unitCost != null && Number.isFinite(Number(item.unitCost))
+            ? Number(item.unitCost)
+            : undefined;
+        const unitCostForLine = frozenUnitCost ?? investPrice;
+        const itemCost = unitCostForLine != null ? unitCostForLine * qty : 0;
         const itemProfit = (itemPrice * qty) - itemCost;
 
         // All-time aggregate
