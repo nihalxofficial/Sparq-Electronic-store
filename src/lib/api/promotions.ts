@@ -39,6 +39,7 @@ export type VendorPlanWindow = {
   isLive: boolean;
   featuredWindowDays: number;
   planDaysRemaining: number;
+  placementPoints: number;
 };
 
 /** Each seller's plan window, so the grant picker can show the cap it applies. */

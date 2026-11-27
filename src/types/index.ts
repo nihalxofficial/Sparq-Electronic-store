@@ -335,6 +335,14 @@ export interface SiteSettingsData {
   timezone: string;
   maintenanceMode: boolean;
   shopBrowseMode?: "pagination" | "scroll";
+  /** Points a featured placement earns, tuned by the store team. */
+  vendorPlacementPoints?: {
+    basic?: number;
+    detailed?: number;
+    advanced?: number;
+    yearlyBonus?: number;
+    perDay?: number;
+  };
   footerCopyright: string;
 }
 

@@ -1062,6 +1062,26 @@ export default function AdminSettingsClient({
     current.footerCopyright || ""
   );
 
+  // ── Vendor featured-placement points ──
+  // How much a placement earns on the featured shelf: a higher plan tier, a
+  // yearly period and a longer pin each add points. Kept as strings so a field
+  // can be cleared while typing.
+  const [placementBasic, setPlacementBasic] = useState(
+    String(current.vendorPlacementPoints?.basic ?? 10000)
+  );
+  const [placementDetailed, setPlacementDetailed] = useState(
+    String(current.vendorPlacementPoints?.detailed ?? 20000)
+  );
+  const [placementAdvanced, setPlacementAdvanced] = useState(
+    String(current.vendorPlacementPoints?.advanced ?? 30000)
+  );
+  const [placementYearlyBonus, setPlacementYearlyBonus] = useState(
+    String(current.vendorPlacementPoints?.yearlyBonus ?? 5000)
+  );
+  const [placementPerDay, setPlacementPerDay] = useState(
+    String(current.vendorPlacementPoints?.perDay ?? 1)
+  );
+
   // ── Admin password change (better-auth) ──
   // The admin changes their own sign-in password here, the same way a customer
   // does on their settings page: verify the current one, then set a new one and
@@ -1314,6 +1334,13 @@ export default function AdminSettingsClient({
             pointsEarnedPerDollar: Number(pointsEarnedPerDollar) || 0,
             pointsPerDollarRedeem: Number(pointsPerDollarRedeem) || 1,
             minPointsToRedeem: Number(minPointsToRedeem) || 0,
+          },
+          vendorPlacementPoints: {
+            basic: Number(placementBasic) || 0,
+            detailed: Number(placementDetailed) || 0,
+            advanced: Number(placementAdvanced) || 0,
+            yearlyBonus: Number(placementYearlyBonus) || 0,
+            perDay: Number(placementPerDay) || 0,
           },
           topBarEnabled,
           topBarText,
@@ -3161,6 +3188,38 @@ export default function AdminSettingsClient({
                 </Button>
               </div>
             </form>
+          </SettingCard>
+
+          <SettingCard
+            title="Placement Points"
+            subtitle="How a featured placement ranks — higher points lead the featured shelves"
+            icon={Sparkles}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--foreground-secondary)]">Basic plan</label>
+                <Input type="number" min={0} value={placementBasic} onChange={(e) => setPlacementBasic(e.target.value)} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--foreground-secondary)]">Detailed plan</label>
+                <Input type="number" min={0} value={placementDetailed} onChange={(e) => setPlacementDetailed(e.target.value)} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--foreground-secondary)]">Advanced plan</label>
+                <Input type="number" min={0} value={placementAdvanced} onChange={(e) => setPlacementAdvanced(e.target.value)} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--foreground-secondary)]">Yearly bonus</label>
+                <Input type="number" min={0} value={placementYearlyBonus} onChange={(e) => setPlacementYearlyBonus(e.target.value)} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--foreground-secondary)]">Points per day</label>
+                <Input type="number" min={0} value={placementPerDay} onChange={(e) => setPlacementPerDay(e.target.value)} />
+              </div>
+            </div>
+            <p className="mt-2 text-[10px] text-[var(--foreground-muted)]">
+              A placement earns its plan's points, plus the yearly bonus, plus the per-day points times its length. A longer pin on a higher plan leads the shelf.
+            </p>
           </SettingCard>
         </div>
       )}
