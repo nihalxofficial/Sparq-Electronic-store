@@ -1,7 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
-import { asPromotionList, getPromotions } from "@/lib/api/promotions";
+import { asPromotionList, getPromotions, getVendorPlanWindows, type VendorPlanWindow } from "@/lib/api/promotions";
 import { getAllStores, asStoreList } from "@/lib/api/vendorStore";
 import { getProducts } from "@/lib/api/products";
 import { getCategories } from "@/lib/api/categories";
@@ -60,6 +60,7 @@ const asProductOptions = (payload: unknown): GrantProductOption[] => {
         isFeatured: Boolean(row.isFeatured),
         sellCount: Number(row.sellCount) || 0,
         sellerName: storeName,
+        vendorId: row.vendorId ? String(row.vendorId) : "",
       };
     })
     .filter((option) => option._id && option.title);
@@ -115,7 +116,7 @@ export default async function AdminPromotionsPage({ searchParams }: AdminPromoti
   const category = panel === "product" ? params?.category?.trim() || "" : "";
   const subCategory = panel === "product" ? params?.subCategory?.trim() || "" : "";
 
-  const [list, productsRes, storesRes, settingsRes, categoriesRes, subCategoriesRes] =
+  const [list, productsRes, storesRes, settingsRes, categoriesRes, subCategoriesRes, windowRes] =
     await Promise.all([
       getPromotions({ status, kind, page, limit: 20 }),
       panel === "product"
@@ -132,6 +133,8 @@ export default async function AdminPromotionsPage({ searchParams }: AdminPromoti
       getSiteSettings(),
       panel === "product" ? getCategories() : Promise.resolve(null),
       panel === "product" ? getSubCategories() : Promise.resolve(null),
+      // Each seller's plan window, so the picker can show the cap a grant will hit.
+      panel ? getVendorPlanWindows() : Promise.resolve([] as VendorPlanWindow[]),
     ]);
 
   const result = asPromotionList(list);
@@ -192,6 +195,7 @@ export default async function AdminPromotionsPage({ searchParams }: AdminPromoti
         slug: string;
       }[]}
       currency={settingsRes?.data?.currency || "BDT"}
+      vendorWindows={windowRes}
     />
   );
 }

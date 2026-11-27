@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Building2,
@@ -20,6 +20,7 @@ import {
 import { toast } from "react-toastify";
 import AppSelect from "@/components/shared/AppSelect";
 import type { FeaturedPlacement, PromotionKind, PromotionState } from "@/types";
+import type { VendorPlanWindow } from "@/lib/api/promotions";
 import type { VendorPagination } from "@/types/vendor";
 import { formatPrice } from "@/lib/currency";
 import {
@@ -54,6 +55,8 @@ export interface GrantProductOption {
   sellCount: number;
   /** The shop that sells it; empty for the store's own stock. */
   sellerName: string;
+  /** The seller account behind the listing, empty for the store's own stock. */
+  vendorId: string;
 }
 
 /** One row of the shop picker. `userId` is what a store grant is made to. */
@@ -92,6 +95,8 @@ interface AdminPromotionsClientProps {
     slug: string;
   }[];
   currency: string;
+  /** Each seller's plan window, so the grant picker shows the cap a grant hits. */
+  vendorWindows: VendorPlanWindow[];
 }
 
 const STATE_TABS: { key: PromotionState | "all"; label: string }[] = [
@@ -123,6 +128,7 @@ export default function AdminPromotionsClient({
   categories,
   subCategories,
   currency,
+  vendorWindows,
 }: AdminPromotionsClientProps) {
   const router = useRouter();
   const [days, setDays] = useState(30);
@@ -178,12 +184,27 @@ export default function AdminPromotionsClient({
   };
   const closePanel = () => go({ panel: "", search: "", category: "", subCategory: "", page: 1 });
 
-  const grant = async (target: { label: string; draft: { kind: PromotionKind; productId?: string; vendorId?: string } }) => {
+  const grant = async (target: { label: string; vendorId?: string; draft: { kind: PromotionKind; productId?: string; vendorId?: string } }) => {
     if (busyId) return;
+
+    // Hold the window to the seller's plan. The API caps it too, but the desk
+    // should say so before the click, not after.
+    const window = target.vendorId ? windowByVendor.get(target.vendorId) : undefined;
+    let effectiveDays = days;
+    if (target.vendorId) {
+      if (!window || window.featuredWindowDays <= 0) {
+        toast.error("That seller's plan has no featured window right now.");
+        return;
+      }
+      effectiveDays = Math.max(1, Math.min(days, window.featuredWindowDays));
+      if (effectiveDays !== days) {
+        toast.info(`Capped to the seller's ${window.featuredWindowDays}-day plan window.`);
+      }
+    }
 
     setBusyId(target.draft.productId || target.draft.vendorId || "");
     try {
-      const res = await grantPromotion({ ...target.draft, days, reason });
+      const res = await grantPromotion({ ...target.draft, days: effectiveDays, reason });
       if (res?.success === false) {
         // The API says what is in the way — the shelf is already booked, the
         // listing is the store's own stock, the seller has no shop — so the
@@ -191,7 +212,7 @@ export default function AdminPromotionsClient({
         toast.error(res.message || "The placement could not be granted");
         return;
       }
-      toast.success(`${target.label} is featured for ${days} day${days === 1 ? "" : "s"}`);
+      toast.success(`${target.label} is featured for ${effectiveDays} day${effectiveDays === 1 ? "" : "s"}`);
       setReason("");
       closePanel();
     } catch (err) {
@@ -263,6 +284,26 @@ export default function AdminPromotionsClient({
     : undefined;
   const activeCategoryId = String(activeCategory?._id ?? activeCategory?.id ?? "");
 
+  // Each seller's plan window, keyed by account, so a row can show the cap a
+  // grant will hit and a click can be held to it.
+  const windowByVendor = useMemo(() => {
+    const map = new Map<string, VendorPlanWindow>();
+    vendorWindows.forEach((row) => {
+      if (row.vendorId) map.set(row.vendorId, row);
+    });
+    return map;
+  }, [vendorWindows]);
+
+  const windowNote = (vendorId?: string) => {
+    if (!vendorId) return "";
+    const row = windowByVendor.get(vendorId);
+    if (!row) return "";
+    if (row.featuredWindowDays <= 0) return " · their plan has no featured window";
+    return ` · ${row.plan} · ${row.featuredWindowDays}-day window · ${row.planDaysRemaining} day${
+      row.planDaysRemaining === 1 ? "" : "s"
+    } left`;
+  };
+
   const panelOptions =
     panel === "product"
       ? products.map((product) => ({
@@ -273,12 +314,13 @@ export default function AdminPromotionsClient({
             product.sellerName ? `Sold by ${product.sellerName}` : "The store's own stock"
           } · ${product.sellCount.toLocaleString()} sold${
             product.isFeatured ? " · already on the shelves" : ""
-          }`,
+          }${windowNote(product.vendorId)}`,
           // Every listing can be lifted here, the store's own stock included:
           // its placement is dated the same way, it just has no seller behind it.
           blocked: false,
           blockedNote: "",
           label: product.title,
+          vendorId: product.vendorId,
           draft: { kind: "product" as PromotionKind, productId: product._id },
         }))
       : stores.map((store) => ({
@@ -287,10 +329,11 @@ export default function AdminPromotionsClient({
           title: store.name,
           subtitle: `${store.ownerName || "The seller"} · ${store.productCount} listing${
             store.productCount === 1 ? "" : "s"
-          }${store.isFeatured ? " · already featured" : ""}`,
+          }${store.isFeatured ? " · already featured" : ""}${windowNote(store.userId)}`,
           blocked: false,
           blockedNote: "",
           label: store.name,
+          vendorId: store.userId,
           draft: { kind: "store" as PromotionKind, vendorId: store.userId },
         }));
 
@@ -505,7 +548,7 @@ export default function AdminPromotionsClient({
                   ) : (
                     <button
                       type="button"
-                      onClick={() => grant({ label: option.label, draft: option.draft })}
+                      onClick={() => grant({ label: option.label, vendorId: option.vendorId, draft: option.draft })}
                       disabled={busyId !== null}
                       className="inline-flex items-center gap-1.5 rounded-lg bg-brand-gradient px-2.5 py-1.5 text-[10px] font-bold text-[var(--on-grad-text)] shadow-xs cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                     >
