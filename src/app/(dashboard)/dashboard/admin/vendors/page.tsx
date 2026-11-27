@@ -27,11 +27,10 @@ interface AdminVendorsPageProps {
 /**
  * The store team's board of sellers.
  *
- * One table over every shop, ranked by the standing the API computes from the
- * rows that own the money: what a seller paid for their plans, how long they
- * have been paying, what they sold and how cleanly they delivered. The points
- * are the order the desk starts with, not a verdict — every other reading can
- * be sorted by too.
+ * One table over every shop, ranked by the points the API reads from the same
+ * ledger the seller's own dashboard uses: permanent plan-period awards plus
+ * delivered units at the configured rate. The points are the order the desk
+ * starts with, not a verdict — every other reading can be sorted by too.
  */
 export default async function AdminVendorsPage({ searchParams }: AdminVendorsPageProps) {
   await getRequiredRole("admin");
