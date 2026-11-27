@@ -628,6 +628,8 @@ Cancelling a paid order marks its payment **refunded**.
 
 ## Recent Changes
 
+- **Admin product scope:** the desk edits and deletes only its own platform stock; a seller's listing can be approved, rejected or archived, never edited.
+- **Analytics label:** the product/chart profit is labelled **Gross margin** (revenue − frozen cost, before commission & rider fee); the dead salesReports plan field was removed.
 - **Banner skeleton, loading mark & admin password:** the hero shows a shimmering skeleton until its art paints; the global loading mark normalises the icon URL and falls back to an animated mark when there is no usable favicon (or it is an .ico); admins can change their password in Settings → System & Security.
 - **Images fit their frames:** hero banners, the store cover and vendor cards use the recommended upload ratio (1920×900 / 960×540 hero, 1200×400 cover), so an image uploaded at that size covers the frame exactly.
 - **Express shipping:** free shipping is the standard method's perk only — express is always charged, even when the basket clears the free-shipping threshold.
