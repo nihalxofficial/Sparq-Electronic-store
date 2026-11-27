@@ -628,6 +628,7 @@ Cancelling a paid order marks its payment **refunded**.
 
 ## Recent Changes
 
+- **Points are cumulative:** the vendor overview shows a Points card (plan awards + sell points) and the shop's position, with a trophy for the top three; the banner picker sort is a HeroUI select.
 - **Vendor points:** a Points card on the seller dashboard and profile shows the total (sell + placement points), the split and the shop's position among vendors; the hero banner picker shows each seller's active plan and points, with a sort.
 - **Promotions:** placement points are configurable in Settings; the admin promotion picker shows each seller's window + points, lists vendors highest-first, and the hero banner picker shows a listing's sell count and the seller's points.
 - **Coupons:** on downgrade/expiry to Free a seller keeps only the coupons Free allows; the rest pause (never delete).
