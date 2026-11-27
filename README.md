@@ -80,6 +80,7 @@ Sparq is a **production-ready e-commerce platform** for electronics with complet
 - **Order Fulfillment**: Accept → Process → Ready → Ship
 - **Discount Coupons**: Create codes for your products
 - **Featured Promotions**: Buy slots to feature products
+- **Vendor Points**: Cumulative plan awards + sell points, a shop position and a dated history
 - **Sales Analytics**: Revenue, top products, commission tracking
 - **Subscription Plans**: Free, Basic ($29/mo), Pro ($99/mo)
 
@@ -201,6 +202,23 @@ TIERS:
   💎 Platinum: 4,000 - 9,999 points
   💎 Diamond:  10,000+ points
 ```
+
+### Vendor Points (sellers)
+
+```
+PLAN POINTS:  every plan period awards  tier + yearly bonus + per-day × period days
+SELL POINTS:  delivered units × points per unit
+TOTAL:        plan points + sell points  → shop position (trophy for the top three)
+```
+
+- **One ledger** — `VendorPointAward` is the single source for every screen: the
+  seller's dashboard (with a dated history of each award and the units behind
+  the sell half), the admin seller board and detail page, and the promotion and
+  hero-banner pickers.
+- **Rates live in Settings** — Admin → Settings → Vendor Points holds the plan
+  tiers, yearly bonus, points per day and points per unit sold.
+- **Awards are snapshots** — changing a rate never rewrites an old period, so
+  the history always explains the current total.
 
 ### Currency & Display
 
@@ -598,6 +616,7 @@ Cancelling a paid order marks its payment **refunded**.
 | Order Splitting | ✅ Complete |
 | Commission System | ✅ Complete |
 | Subscription Renewals | ✅ Extend, never reset |
+| Vendor Points | ✅ One ledger: plan awards + sell points, history & position |
 | Vendor & Rider Applications | ✅ Submit, review, approve |
 | **Delivery** ||
 | Rider Dashboard | ✅ Complete |
