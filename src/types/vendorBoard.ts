@@ -25,18 +25,17 @@ export type VendorBoardQuery = {
 };
 
 /**
- * The standing the desk sorts by: what a shop paid for its plans, how long it
- * has been paying, what it sold and how cleanly it delivered.
+ * A seller's standing, in the same two halves their own dashboard shows.
+ *
+ * Plan points are the permanent awards written on every plan period; sell
+ * points are delivered units at the configured rate. Both come from the one
+ * ledger in the API, so every screen shows the same total.
  */
 export interface VendorPoints {
-  /** One point per hundred of plan money. */
-  subscription: number;
-  /** One point per thirty days of plan time bought. */
-  duration: number;
-  /** One point per thousand of sales that were not lost. */
-  sales: number;
-  /** The delivery record contributes its own percentage. */
-  record: number;
+  /** Permanent points from every plan period the seller has held. */
+  planPoints: number;
+  /** Delivered units × the configured points-per-unit. */
+  sellPoints: number;
   total: number;
 }
 

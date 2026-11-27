@@ -1062,10 +1062,11 @@ export default function AdminSettingsClient({
     current.footerCopyright || ""
   );
 
-  // ── Vendor featured-placement points ──
-  // How much a placement earns on the featured shelf: a higher plan tier, a
-  // yearly period and a longer pin each add points. Kept as strings so a field
-  // can be cleared while typing.
+  // ── Vendor points ──
+  // The one formula every points figure reads: each plan period earns its tier
+  // points plus a yearly bonus plus perDay × period days, and each delivered
+  // unit earns sellPerUnit. Kept as strings so a field can be cleared while
+  // typing.
   const [placementBasic, setPlacementBasic] = useState(
     String(current.vendorPlacementPoints?.basic ?? 10000)
   );
@@ -3195,8 +3196,8 @@ export default function AdminSettingsClient({
           </SettingCard>
 
           <SettingCard
-            title="Placement Points"
-            subtitle="How a featured placement ranks — higher points lead the featured shelves"
+            title="Vendor Points"
+            subtitle="How plan periods and delivered units earn points — the one source every points figure reads"
             icon={Sparkles}
           >
             <div className="grid grid-cols-2 gap-3">
@@ -3239,7 +3240,11 @@ export default function AdminSettingsClient({
               ))}
             </div>
             <p className="mt-2 text-[10px] text-[var(--foreground-muted)]">
-              A placement earns its plan's points plus the yearly bonus, plus {Number(placementPerDay) || 0}/day. A seller also earns {Number(placementSellPerUnit) || 0} points for each unit sold.
+              Each plan period earns its plan&apos;s points plus the yearly bonus, plus{" "}
+              {Number(placementPerDay) || 0} per day of the period. A seller also earns{" "}
+              {Number(placementSellPerUnit) || 0} points for every delivered unit. These fields are the
+              single source for vendor points everywhere — the seller&apos;s dashboard, the admin seller
+              board, and the promotion and banner pickers all read the same totals.
             </p>
           </SettingCard>
         </div>

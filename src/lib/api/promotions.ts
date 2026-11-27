@@ -31,7 +31,7 @@ export const asPromotion = (payload: unknown): FeaturedPlacement | null => {
   return (payload as { data?: FeaturedPlacement } | null)?.data ?? null;
 };
 
-/** One seller's featured window, as the grant picker needs to show it. */
+/** One seller's featured window and standing, as the grant picker needs it. */
 export type VendorPlanWindow = {
   vendorId: string;
   storeName: string;
@@ -39,7 +39,8 @@ export type VendorPlanWindow = {
   isLive: boolean;
   featuredWindowDays: number;
   planDaysRemaining: number;
-  placementPoints: number;
+  /** The seller's total points, the same number every other screen shows. */
+  points: number;
 };
 
 /** Each seller's plan window, so the grant picker can show the cap it applies. */
@@ -49,16 +50,27 @@ export const getVendorPlanWindows = async (): Promise<VendorPlanWindow[]> => {
   return Array.isArray(rows) ? rows : [];
 };
 
+/** One permanent plan-period award: where and when plan points came in. */
+export type VendorPointAward = {
+  id: string;
+  plan: string;
+  billingCycle: string;
+  points: number;
+  note: string;
+  awardedAt: string | null;
+};
+
 /** A seller's points and where they came from. */
 export type VendorPoints = {
   perUnit: number;
   sellPoints: number;
   soldUnits: number;
-  placementPoints: number;
+  planPoints: number;
   totalPoints: number;
   position: number;
   totalVendors: number;
   products: { productId: string; title: string; units: number; points: number }[];
+  history: VendorPointAward[];
 };
 
 /** The signed-in seller's points: sell, placement, total, and their position. */

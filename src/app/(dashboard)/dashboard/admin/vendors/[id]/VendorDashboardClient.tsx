@@ -263,8 +263,8 @@ export default function VendorDashboardClient({ detail, currency }: VendorDashbo
         />
         <Tile
           label="Points"
-          value={String(vendor.points.total)}
-          note={`${vendor.points.subscription} pay · ${vendor.points.duration} time · ${vendor.points.sales} sell · ${vendor.points.record} record`}
+          value={vendor.points.total.toLocaleString()}
+          note={`${vendor.points.planPoints.toLocaleString()} plan · ${vendor.points.sellPoints.toLocaleString()} sell`}
           icon={Star}
         />
         <Tile

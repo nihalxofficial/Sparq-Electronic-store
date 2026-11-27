@@ -77,9 +77,9 @@ function rateText(rate: number): string {
   return "text-rose-600 dark:text-rose-400";
 }
 
-/** The four readings behind the total, in the order the API adds them. */
+/** The two readings behind the total, in the same split the seller sees. */
 function pointsWords(points: VendorPoints): string {
-  return `Plan ${points.subscription} · ${points.duration} for time bought · ${points.sales} for sales · ${points.record} for delivery`;
+  return `${points.planPoints.toLocaleString()} from plan periods · ${points.sellPoints.toLocaleString()} from delivered units`;
 }
 
 function VendorRow({ vendor, currency }: { vendor: VendorBoardRow; currency: string }) {
@@ -195,12 +195,13 @@ function VendorRow({ vendor, currency }: { vendor: VendorBoardRow; currency: str
         </p>
       </td>
 
-      {/* The standing the board is ranked by, with its four readings. */}
+      {/* The standing the board is ranked by, split the same way the seller sees it. */}
       <td className="px-4 py-3 text-right" title={pointsWords(vendor.points)}>
-        <p className="text-sm font-extrabold text-[var(--foreground)]">{vendor.points.total}</p>
+        <p className="text-sm font-extrabold text-[var(--foreground)]">
+          {vendor.points.total.toLocaleString()}
+        </p>
         <p className="mt-0.5 text-[9px] font-semibold uppercase tracking-wider text-[var(--foreground-muted)]">
-          {vendor.points.subscription} pay · {vendor.points.duration} time · {vendor.points.sales} sell ·{" "}
-          {vendor.points.record} record
+          {vendor.points.planPoints.toLocaleString()} plan · {vendor.points.sellPoints.toLocaleString()} sell
         </p>
       </td>
 

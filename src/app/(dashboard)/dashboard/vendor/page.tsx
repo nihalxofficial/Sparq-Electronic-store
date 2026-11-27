@@ -48,7 +48,8 @@ export default async function VendorOverviewPage() {
     // plan is refused by the API, so this simply resolves to null and the cards
     // stay hidden rather than showing a guessed number.
     getVendorOrderFinancials({ days: 30, limit: 1 }).catch(() => null),
-    // Points: sell points plus placement points, and the shop's position.
+    // Points: plan awards plus sell points, and the shop's position. The same
+    // ledger every store-team screen reads.
     getMyVendorPoints().catch(() => null),
   ]);
 
@@ -252,7 +253,7 @@ export default async function VendorOverviewPage() {
           </div>
         )}
 
-        {/* Points — sell points + placement points, and the shop's position */}
+        {/* Points — the same plan + sell split every store-team screen reads */}
         {pointsRes && (
           <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2">
             <div>
@@ -260,7 +261,7 @@ export default async function VendorOverviewPage() {
                 {pointsRes.totalPoints.toLocaleString()}
               </p>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--foreground-muted)]">
-                Points · {pointsRes.sellPoints.toLocaleString()} sold · {pointsRes.placementPoints.toLocaleString()} plan
+                Points · {pointsRes.sellPoints.toLocaleString()} sold · {pointsRes.planPoints.toLocaleString()} plan
               </p>
             </div>
             {pointsRes.position <= 3 ? (
@@ -394,6 +395,94 @@ export default async function VendorOverviewPage() {
           </Link>
         </section>
       </div>
+
+      {/* Points history — where and when every point was earned. */}
+      {pointsRes && (
+        <section className="rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] p-5 shadow-2xs">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 className="text-xs font-bold text-[var(--foreground)]">Points history</h2>
+              <p className="text-[10px] text-[var(--foreground-muted)]">
+                Every plan period and every delivered unit behind your total.
+              </p>
+            </div>
+            <span className="rounded-md bg-[var(--surface-alt)] px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
+              {pointsRes.totalPoints.toLocaleString()} total
+            </span>
+          </div>
+
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            {/* Plan periods: the permanent award ledger, newest first. */}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
+                From plan periods · {pointsRes.planPoints.toLocaleString()}
+              </p>
+              {pointsRes.history.length === 0 ? (
+                <p className="mt-2 rounded-xl border border-dashed border-[var(--border-color)] px-3 py-4 text-[11px] text-[var(--foreground-muted)]">
+                  No plan period has awarded points yet. Your first period will open the ledger.
+                </p>
+              ) : (
+                <ul className="mt-2 space-y-2">
+                  {pointsRes.history.map((award) => (
+                    <li
+                      key={award.id}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-[11px] font-bold text-[var(--foreground)]">
+                          {award.note || `${award.plan} ${award.billingCycle} period`}
+                        </p>
+                        <p className="text-[10px] text-[var(--foreground-muted)]">
+                          {formatOrderDate(award.awardedAt) || "—"} · {award.billingCycle}
+                        </p>
+                      </div>
+                      <span className="shrink-0 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                        +{award.points.toLocaleString()}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Delivered units: the sell half, and what sold. */}
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
+                From delivered units · {pointsRes.sellPoints.toLocaleString()}
+              </p>
+              <div className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold text-[var(--foreground)]">
+                    {pointsRes.soldUnits.toLocaleString()} unit{pointsRes.soldUnits === 1 ? "" : "s"} delivered
+                  </p>
+                  <p className="text-[10px] text-[var(--foreground-muted)]">
+                    {pointsRes.perUnit} point{pointsRes.perUnit === 1 ? "" : "s"} per unit
+                  </p>
+                </div>
+                <span className="shrink-0 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                  +{pointsRes.sellPoints.toLocaleString()}
+                </span>
+              </div>
+
+              {pointsRes.products.length > 0 && (
+                <ul className="mt-2 space-y-1.5">
+                  {pointsRes.products.map((product) => (
+                    <li
+                      key={product.productId}
+                      className="flex items-center justify-between gap-3 px-1 text-[10px] text-[var(--foreground-muted)]"
+                    >
+                      <span className="truncate">{product.title}</span>
+                      <span className="shrink-0 font-semibold text-[var(--foreground)]">
+                        {product.units} × {pointsRes.perUnit} = {product.points.toLocaleString()} pts
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

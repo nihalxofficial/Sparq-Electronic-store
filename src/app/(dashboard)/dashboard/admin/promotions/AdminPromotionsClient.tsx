@@ -301,7 +301,7 @@ export default function AdminPromotionsClient({
     if (row.featuredWindowDays <= 0) return " · their plan has no featured window";
     return ` · ${row.plan} · ${row.featuredWindowDays}-day window · ${row.planDaysRemaining} day${
       row.planDaysRemaining === 1 ? "" : "s"
-    } left · ${row.placementPoints.toLocaleString()} pts`;
+    } left · ${row.points.toLocaleString()} pts`;
   };
 
   const panelOptions =
@@ -326,8 +326,8 @@ export default function AdminPromotionsClient({
       : stores
           .slice()
           .sort((a, b) => {
-            const pa = windowByVendor.get(a.userId)?.placementPoints ?? 0;
-            const pb = windowByVendor.get(b.userId)?.placementPoints ?? 0;
+            const pa = windowByVendor.get(a.userId)?.points ?? 0;
+            const pb = windowByVendor.get(b.userId)?.points ?? 0;
             return pb - pa;
           })
           .map((store) => ({

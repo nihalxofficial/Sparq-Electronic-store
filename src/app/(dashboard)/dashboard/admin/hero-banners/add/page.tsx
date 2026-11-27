@@ -22,7 +22,7 @@ export default async function AddHeroBannerPage() {
   const categories = Array.isArray(categoriesRes?.data) ? categoriesRes.data : [];
   const stores = asStoreList(storesRes)?.stores ?? [];
   const vendorPlans = Object.fromEntries(
-    windowsRes.map((w) => [w.vendorId, { plan: w.plan, points: w.placementPoints }])
+    windowsRes.map((w) => [w.vendorId, { plan: w.plan, points: w.points }])
   );
 
   return (

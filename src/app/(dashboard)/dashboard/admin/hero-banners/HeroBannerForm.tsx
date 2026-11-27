@@ -31,7 +31,7 @@ export interface ProductLite {
   brand?: string;
   /** How many of the listing have sold, for the picker's note. */
   sellCount?: number;
-  /** The seller behind the listing, so its placement points can be shown. */
+  /** The seller behind the listing, so its vendor points can be shown. */
   vendorId?: string;
 }
 
@@ -47,7 +47,7 @@ export interface StoreLite {
   id?: string;
   name: string;
   slug?: string;
-  /** The seller account, so its placement points can be shown. */
+  /** The seller account, so its vendor points can be shown. */
   userId?: string;
 }
 
@@ -58,7 +58,7 @@ interface HeroBannerFormProps {
   products: ProductLite[];
   categories: CategoryLite[];
   stores: StoreLite[];
-  /** Each seller's active plan and placement points, for the picker notes. */
+  /** Each seller's active plan and vendor points, for the picker notes. */
   vendorPlans?: Record<string, { plan: string; points: number }>;
 }
 
@@ -364,7 +364,7 @@ export default function HeroBannerForm({
                     value={targetSort}
                     onChange={(v) => setTargetSort(v as "points" | "name" | "plan")}
                     options={[
-                      { value: "points", label: "Placement points (high to low)" },
+                      { value: "points", label: "Vendor points (high to low)" },
                       { value: "name", label: "Name (A-Z)" },
                       { value: "plan", label: "Plan" },
                     ]}
