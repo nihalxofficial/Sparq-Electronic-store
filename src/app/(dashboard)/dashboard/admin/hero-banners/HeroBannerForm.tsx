@@ -57,8 +57,8 @@ interface HeroBannerFormProps {
   products: ProductLite[];
   categories: CategoryLite[];
   stores: StoreLite[];
-  /** Placement points by seller account, for the vendor/products picker notes. */
-  vendorPoints?: Record<string, number>;
+  /** Each seller's active plan and placement points, for the picker notes. */
+  vendorPlans?: Record<string, { plan: string; points: number }>;
 }
 
 const TYPE_OPTIONS: { value: BannerType; label: string; icon: typeof Package }[] = [
@@ -77,13 +77,16 @@ export default function HeroBannerForm({
   products = [],
   categories = [],
   stores = [],
-  vendorPoints = {},
+  vendorPlans = {},
 }: HeroBannerFormProps) {
   const router = useRouter();
   const isEdit = mode === "edit" && Boolean(initialBanner);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [targetSearch, setTargetSearch] = useState("");
+  // The picker's order. Points lead by default, so the highest-value shops and
+  // listings come first; name and plan are there when the admin is hunting.
+  const [targetSort, setTargetSort] = useState<"points" | "name" | "plan">("points");
   const [form, setForm] = useState({
     title: initialBanner?.title || "",
     subtitle: initialBanner?.subtitle || "",
@@ -113,12 +116,14 @@ export default function HeroBannerForm({
           p.sku,
           p.brand,
           p.sellCount != null ? `${p.sellCount} sold` : "",
-          p.vendorId && vendorPoints[p.vendorId] != null
-            ? `${vendorPoints[p.vendorId]} pts`
+          p.vendorId && vendorPlans[p.vendorId]
+            ? `${vendorPlans[p.vendorId].plan} · ${vendorPlans[p.vendorId].points} pts`
             : "",
         ]
           .filter(Boolean)
           .join(" · "),
+        points: p.vendorId ? vendorPlans[p.vendorId]?.points ?? 0 : 0,
+        plan: p.vendorId ? vendorPlans[p.vendorId]?.plan ?? "" : "",
       }));
     }
     if (form.type === "category") {
@@ -126,6 +131,8 @@ export default function HeroBannerForm({
         id: idOf(c),
         label: c.name,
         meta: c.slug || "",
+        points: 0,
+        plan: "",
       }));
     }
     if (form.type === "vendor") {
@@ -134,14 +141,18 @@ export default function HeroBannerForm({
         label: s.name,
         meta: [
           s.slug ? `@${s.slug}` : "",
-          s.userId && vendorPoints[s.userId] != null ? `${vendorPoints[s.userId]} pts` : "",
+          s.userId && vendorPlans[s.userId]
+            ? `${vendorPlans[s.userId].plan} · ${vendorPlans[s.userId].points} pts`
+            : "",
         ]
           .filter(Boolean)
           .join(" · "),
+        points: s.userId ? vendorPlans[s.userId]?.points ?? 0 : 0,
+        plan: s.userId ? vendorPlans[s.userId]?.plan ?? "" : "",
       }));
     }
     return [];
-  }, [form.type, products, categories, stores, vendorPoints]);
+  }, [form.type, products, categories, stores, vendorPlans]);
 
   const selectedTargetId =
     form.type === "product"
@@ -157,13 +168,25 @@ export default function HeroBannerForm({
 
   const filteredTargetOptions = useMemo(() => {
     const q = targetSearch.trim().toLowerCase();
-    if (!q) return targetOptions;
-    return targetOptions.filter(
-      (opt) =>
-        opt.label.toLowerCase().includes(q) ||
-        opt.meta.toLowerCase().includes(q)
-    );
-  }, [targetOptions, targetSearch]);
+    const list = q
+      ? targetOptions.filter(
+          (opt) => opt.label.toLowerCase().includes(q) || opt.meta.toLowerCase().includes(q)
+        )
+      : targetOptions;
+    const sorted = [...list];
+    if (targetSort === "plan") {
+      sorted.sort(
+        (a, b) =>
+          String(a.plan || "").localeCompare(String(b.plan || "")) ||
+          (b.points ?? 0) - (a.points ?? 0)
+      );
+    } else if (targetSort === "name") {
+      sorted.sort((a, b) => a.label.localeCompare(b.label));
+    } else {
+      sorted.sort((a, b) => (b.points ?? 0) - (a.points ?? 0));
+    }
+    return sorted;
+  }, [targetOptions, targetSearch, targetSort]);
 
   const selectTarget = (id: string) => {
     if (form.type === "product") set({ productId: id });
@@ -330,6 +353,26 @@ export default function HeroBannerForm({
                   </button>
                 )}
               </div>
+
+              {form.type !== "category" && (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
+                    Sort
+                  </span>
+                  <select
+                    value={targetSort}
+                    onChange={(e) =>
+                      setTargetSort(e.target.value as "points" | "name" | "plan")
+                    }
+                    className="h-8 rounded-lg border border-[var(--border-color)] bg-[var(--surface)] px-2 text-[11px] text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-flat)]/35 cursor-pointer"
+                    aria-label="Sort the picker"
+                  >
+                    <option value="points">Placement points (high to low)</option>
+                    <option value="name">Name (A-Z)</option>
+                    <option value="plan">Plan</option>
+                  </select>
+                </div>
+              )}
 
               <div className="max-h-56 overflow-y-auto rounded-xl border border-[var(--border-color)] bg-[var(--surface-alt)]/50 divide-y divide-[var(--border-color)]/60">
                 {filteredTargetOptions.length === 0 ? (

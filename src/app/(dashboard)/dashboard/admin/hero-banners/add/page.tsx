@@ -21,8 +21,8 @@ export default async function AddHeroBannerPage() {
   const products = productsRes?.data?.products ?? [];
   const categories = Array.isArray(categoriesRes?.data) ? categoriesRes.data : [];
   const stores = asStoreList(storesRes)?.stores ?? [];
-  const vendorPoints = Object.fromEntries(
-    windowsRes.map((w) => [w.vendorId, w.placementPoints])
+  const vendorPlans = Object.fromEntries(
+    windowsRes.map((w) => [w.vendorId, { plan: w.plan, points: w.placementPoints }])
   );
 
   return (
@@ -32,7 +32,7 @@ export default async function AddHeroBannerPage() {
       products={products}
       categories={categories}
       stores={stores}
-      vendorPoints={vendorPoints}
+      vendorPlans={vendorPlans}
     />
   );
 }
