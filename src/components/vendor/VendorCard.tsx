@@ -31,7 +31,7 @@ export default function VendorCard({
       className="group relative flex flex-col rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] overflow-hidden shadow-2xs hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-black/50 hover:border-primary/40 hover:-translate-y-1 transition-all duration-300 cursor-pointer"
     >
       {/* Cover, or the gradient the shop would have painted */}
-      <div className={`relative shrink-0 bg-brand-gradient overflow-hidden ${compact ? "h-20" : "h-28 sm:h-32"}`}>
+      <div className="relative shrink-0 aspect-[3/1] bg-brand-gradient overflow-hidden">
         {vendor.coverImage && (
           <Image
             src={vendor.coverImage}

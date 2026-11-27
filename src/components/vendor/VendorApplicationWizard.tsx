@@ -411,7 +411,7 @@ export default function VendorApplicationWizard({
 
             <ImageUploader
               label="Cover image"
-              hint="Recommended: 1200 × 300 px to 1200 × 400 px (3:1 to 4:1 widescreen banner). The wide banner across the top of your store page."
+              hint="Recommended: 1200 × 400 px (3:1 widescreen banner). The wide banner across the top of your store page."
               value={draft.storeInfo.coverImage || ""}
               onChange={(url) => patchStore({ coverImage: url })}
               urlPlaceholder="https://"

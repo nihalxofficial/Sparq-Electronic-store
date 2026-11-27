@@ -90,8 +90,11 @@ export default function HeroSlider({ initialBanners = [] }: HeroSliderProps) {
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
       >
-        {/* Each banner is absolutely stacked so the cross-fade is a pure opacity change. */}
-        <div className="relative h-60 sm:h-80 md:h-[440px]">
+        {/* Each banner is absolutely stacked so the cross-fade is a pure opacity change.
+            The frame follows the recommended upload size (960×600 on phones,
+            1920×700 on wider screens), so a banner uploaded at that size fills it
+            exactly instead of being cropped. */}
+        <div className="relative aspect-[960/600] sm:aspect-[1920/700]">
           {banners.map((b, i) => {
             const active = i === index;
             return (

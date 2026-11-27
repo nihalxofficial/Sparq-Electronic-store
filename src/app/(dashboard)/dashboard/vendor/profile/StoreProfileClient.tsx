@@ -290,7 +290,7 @@ export default function StoreProfileClient({
       <section className="overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] shadow-2xs">
         {/* Keep the gradient behind the cover: a tall band shows the artwork,
             and a slow or broken URL still shows the brand instead of a blank. */}
-        <div className="relative flex h-32 items-center justify-center bg-brand-gradient sm:h-40">
+        <div className="relative flex aspect-[3/1] items-center justify-center bg-brand-gradient">
           {draft.coverImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -404,7 +404,7 @@ export default function StoreProfileClient({
             value={draft.coverImage}
             onChange={(url) => set("coverImage", url)}
             urlPlaceholder="https://example.com/store-cover.webp"
-            hint="Recommended: 1200 × 300 px to 1200 × 400 px (3:1 to 4:1 widescreen banner, JPG/WebP). Header banner for your store."
+            hint="Recommended: 1200 × 400 px (3:1 widescreen banner, JPG/WebP). Header banner for your store."
           />
         </section>
 

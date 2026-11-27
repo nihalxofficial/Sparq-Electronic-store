@@ -44,8 +44,10 @@ export default function VendorBanner({ store }: { store: PublicStore }) {
   return (
     <>
       <div className="rounded-3xl overflow-hidden border border-[var(--border-color)] bg-[var(--surface-elevated)] shadow-2xs">
-        {/* ── Cover, opening the shop's photos ── */}
-        <div className="relative h-36 md:h-52 bg-brand-gradient">
+        {/* ── Cover, opening the shop's photos ──
+            The frame is the recommended 3:1 (1200×400), so a cover uploaded at
+            that size fills it exactly instead of being cropped. */}
+        <div className="relative aspect-[3/1] bg-brand-gradient">
           {store.coverImage && (
             <button
               type="button"

@@ -78,10 +78,9 @@ export default async function VendorOverviewPage() {
     <div className="space-y-5">
       {/* Store header with cover image just like profile page */}
       <section className="overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] shadow-2xs">
-        {/* The gradient stays behind the image, so an empty or broken URL
-            still leaves a branded band instead of a blank strip. The band is
-            tall enough to show the artwork instead of one cropped slice. */}
-        <div className="relative flex h-36 items-center justify-center bg-brand-gradient sm:h-44">
+        {/* The band follows the recommended 3:1 cover (1200×400), so an
+            uploaded-at-size image fills it exactly instead of being cropped. */}
+        <div className="relative flex aspect-[3/1] items-center justify-center bg-brand-gradient">
           {coverImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={coverImage} alt="" className="h-full w-full object-cover" />
@@ -104,7 +103,7 @@ export default async function VendorOverviewPage() {
                 // The logo is a URL the applicant supplied; next/image would
                 // need every host configured, so this stays a plain image.
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={logo} alt={storeName} className="h-full w-full object-cover" />
+                <img src={logo} alt={storeName} className="h-full w-full object-contain p-1.5" />
               ) : (
                 <Store className="h-6 w-6" />
               )}
