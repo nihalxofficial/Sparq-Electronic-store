@@ -35,12 +35,6 @@ export default function HeroSlider({ initialBanners = [] }: HeroSliderProps) {
   const [current, setCurrent] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
-  // Which banners have painted. Until the active one does, a skeleton stands in
-  // its place so the hero never flashes a blank frame or a broken image.
-  const [loadedBanners, setLoadedBanners] = useState<Record<string, boolean>>({});
-  const markLoaded = (id: string) =>
-    setLoadedBanners((prev) => (prev[id] ? prev : { ...prev, [id]: true }));
-
   useEffect(() => {
     if (isPaused || banners.length <= 1) return;
     const id = setInterval(() => setCurrent((p) => (p + 1) % banners.length), 5000);
@@ -119,15 +113,10 @@ export default function HeroSlider({ initialBanners = [] }: HeroSliderProps) {
                     src={b.desktopImage || FALLBACK_IMAGE}
                     alt={b.title}
                     referrerPolicy="no-referrer"
-                    onLoad={() => markLoaded(b.id)}
                     onError={(e) => {
                       e.currentTarget.onerror = null;
                       if (e.currentTarget.src !== FALLBACK_IMAGE) {
                         e.currentTarget.src = FALLBACK_IMAGE;
-                      } else {
-                        // The fallback failed too: stop the skeleton so the
-                        // branded gradient underneath is what shows.
-                        markLoaded(b.id);
                       }
                     }}
                     className="w-full h-full object-cover"
@@ -180,18 +169,6 @@ export default function HeroSlider({ initialBanners = [] }: HeroSliderProps) {
               </Link>
             );
           })}
-
-          {/* Skeleton until the active banner's artwork paints */}
-          {banner && !loadedBanners[banner.id] && (
-            <div className="absolute inset-0 z-30 bg-[var(--surface-alt)]">
-              <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.6s_infinite] bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-              <div className="absolute left-6 sm:left-10 md:left-14 bottom-10 md:bottom-16 w-2/3 max-w-md space-y-3">
-                <div className="h-7 md:h-10 w-3/4 rounded-lg bg-[var(--foreground)]/10" />
-                <div className="h-3 w-1/2 rounded bg-[var(--foreground)]/10" />
-                <div className="h-9 w-32 rounded-full bg-[var(--foreground)]/10" />
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Controls */}
