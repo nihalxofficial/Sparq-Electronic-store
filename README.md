@@ -628,6 +628,7 @@ Cancelling a paid order marks its payment **refunded**.
 
 ## Recent Changes
 
+- **Images fit their frames:** hero banners, the store cover and vendor cards use the recommended upload ratio (1920×700 / 960×600 hero, 1200×400 cover), so an image uploaded at that size fills the frame instead of being cropped.
 - **Express shipping:** free shipping is the standard method's perk only — express is always charged, even when the basket clears the free-shipping threshold.
 - **Optional warranty:** an empty warranty period saves as No warranty with no error, and a product with no warranty shows no warranty rows.
 - **Refund on any cancellation:** cancelling an order by anyone marks its payment refunded, not failed.
