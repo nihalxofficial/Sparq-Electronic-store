@@ -59,7 +59,7 @@ export default function HeroSlider({ initialBanners = [] }: HeroSliderProps) {
   if (banners.length === 0) {
     return (
       <div className="w-full">
-        <div className="relative bg-[var(--surface-elevated)] rounded-2xl overflow-hidden border border-[var(--border-color)] p-8 md:p-12 flex flex-col items-center justify-center text-center min-h-[320px] space-y-4">
+        <div className="relative bg-[var(--surface-elevated)] rounded-2xl overflow-hidden border border-[var(--border-color)] p-8 md:p-12 flex flex-col items-center justify-center text-center aspect-[960/540] sm:aspect-[1920/900] space-y-4">
           <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center shadow-xs">
             <Megaphone className="w-6 h-6" />
           </div>
@@ -91,10 +91,10 @@ export default function HeroSlider({ initialBanners = [] }: HeroSliderProps) {
         onMouseLeave={() => setIsPaused(false)}
       >
         {/* Each banner is absolutely stacked so the cross-fade is a pure opacity change.
-            The frame follows the recommended upload size (960×600 on phones,
-            1920×700 on wider screens), so a banner uploaded at that size fills it
-            exactly instead of being cropped. */}
-        <div className="relative aspect-[960/600] sm:aspect-[1920/700]">
+            The frame matches the recommended upload (1920×900 desktop, 960×540
+            phones), so a banner uploaded at that size covers it exactly instead
+            of being cropped. */}
+        <div className="relative aspect-[960/540] sm:aspect-[1920/900]">
           {banners.map((b, i) => {
             const active = i === index;
             return (
