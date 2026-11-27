@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import HeroSlider from "@/components/homepage/HeroSlider";
+import HeroSliderSkeleton from "@/components/homepage/HeroSliderSkeleton";
 import CategoriesDropdown from "@/components/shared/CategoriesDropdown";
 import PromoBanners from "@/components/homepage/PromoBanners";
 import WarehouseDeals from "@/components/homepage/WarehouseDeals";
@@ -107,7 +108,7 @@ export default function Home() {
             <CategoriesDropdown variant="docked" label="All Departments" />
           </div>
           <div className="flex-1 min-w-0 w-full relative z-10">
-            <Suspense fallback={<HeroSlider />}>
+            <Suspense fallback={<HeroSliderSkeleton />}>
               <HeroSliderSection />
             </Suspense>
           </div>
