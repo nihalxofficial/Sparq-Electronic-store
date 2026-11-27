@@ -2447,7 +2447,7 @@ export default function AdminSettingsClient({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <SettingCard
                 title="Navbar Logo — Light Theme"
-                subtitle="Recommended: 160×40px (PNG or SVG, transparent background)"
+                subtitle="Shown in the top navigation bar. Transparent PNG or SVG."
                 icon={ImageIcon}
               >
                 <ImageUploader
@@ -2490,7 +2490,7 @@ export default function AdminSettingsClient({
 
               <SettingCard
                 title="Navbar Logo — Dark Theme"
-                subtitle="Recommended: 160×40px (PNG or SVG, transparent background). Leave blank to reuse light logo."
+                subtitle="Shown in the top navigation bar in dark mode. Leave blank to reuse the light logo."
                 icon={ImageIcon}
               >
                 <ImageUploader
@@ -2538,7 +2538,7 @@ export default function AdminSettingsClient({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <SettingCard
                 title="Footer Logo — Light Theme"
-                subtitle="Recommended: 200×50px (PNG or SVG, transparent background)"
+                subtitle="Shown in the footer. Transparent PNG or SVG."
                 icon={ImageIcon}
               >
                 <ImageUploader
@@ -2581,7 +2581,7 @@ export default function AdminSettingsClient({
 
               <SettingCard
                 title="Footer Logo — Dark Theme"
-                subtitle="Recommended: 200×50px (PNG or SVG, transparent background). Leave blank to reuse light logo."
+                subtitle="Shown in the footer in dark mode. Leave blank to reuse the light logo."
                 icon={ImageIcon}
               >
                 <ImageUploader
@@ -2671,7 +2671,7 @@ export default function AdminSettingsClient({
           {/* Favicon Upload */}
           <SettingCard
             title="Browser Favicon"
-            subtitle="Recommended dimensions: 32×32px — ICO, PNG, JPG, WEBP, SVG or GIF"
+            subtitle="Used for browser tabs and bookmarks."
             icon={Globe}
           >
             <ImageUploader
