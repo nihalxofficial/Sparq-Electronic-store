@@ -628,6 +628,8 @@ Cancelling a paid order marks its payment **refunded**.
 
 ## Recent Changes
 
+- **Promotions:** placement points are configurable in Settings; the admin promotion picker shows each seller's window + points, lists vendors highest-first, and the hero banner picker shows a listing's sell count and the seller's points.
+- **Coupons:** on downgrade/expiry to Free a seller keeps only the coupons Free allows; the rest pause (never delete).
 - **Admin promotions:** the grant picker shows each seller's plan window (plan · window days · days left) and caps the grant to it before the click.
 - **Featured length:** the seller picks how many days to feature a listing, up to their plan window; a downgrade to a plan with no featured window clears the placements and pauses coupons past the new allowance.
 - **Admin product scope:** the desk edits and deletes only its own platform stock; a seller's listing can be approved, rejected or archived, never edited.
