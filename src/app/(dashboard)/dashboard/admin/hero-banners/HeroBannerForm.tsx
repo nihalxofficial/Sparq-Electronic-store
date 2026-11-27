@@ -28,6 +28,10 @@ export interface ProductLite {
   title: string;
   sku?: string;
   brand?: string;
+  /** How many of the listing have sold, for the picker's note. */
+  sellCount?: number;
+  /** The seller behind the listing, so its placement points can be shown. */
+  vendorId?: string;
 }
 
 export interface CategoryLite {
@@ -42,6 +46,8 @@ export interface StoreLite {
   id?: string;
   name: string;
   slug?: string;
+  /** The seller account, so its placement points can be shown. */
+  userId?: string;
 }
 
 interface HeroBannerFormProps {
@@ -51,6 +57,8 @@ interface HeroBannerFormProps {
   products: ProductLite[];
   categories: CategoryLite[];
   stores: StoreLite[];
+  /** Placement points by seller account, for the vendor/products picker notes. */
+  vendorPoints?: Record<string, number>;
 }
 
 const TYPE_OPTIONS: { value: BannerType; label: string; icon: typeof Package }[] = [
@@ -69,6 +77,7 @@ export default function HeroBannerForm({
   products = [],
   categories = [],
   stores = [],
+  vendorPoints = {},
 }: HeroBannerFormProps) {
   const router = useRouter();
   const isEdit = mode === "edit" && Boolean(initialBanner);
@@ -100,7 +109,16 @@ export default function HeroBannerForm({
       return products.map((p) => ({
         id: idOf(p),
         label: p.title,
-        meta: [p.sku, p.brand].filter(Boolean).join(" · "),
+        meta: [
+          p.sku,
+          p.brand,
+          p.sellCount != null ? `${p.sellCount} sold` : "",
+          p.vendorId && vendorPoints[p.vendorId] != null
+            ? `${vendorPoints[p.vendorId]} pts`
+            : "",
+        ]
+          .filter(Boolean)
+          .join(" · "),
       }));
     }
     if (form.type === "category") {
@@ -114,11 +132,16 @@ export default function HeroBannerForm({
       return stores.map((s) => ({
         id: idOf(s),
         label: s.name,
-        meta: s.slug ? `@${s.slug}` : "",
+        meta: [
+          s.slug ? `@${s.slug}` : "",
+          s.userId && vendorPoints[s.userId] != null ? `${vendorPoints[s.userId]} pts` : "",
+        ]
+          .filter(Boolean)
+          .join(" · "),
       }));
     }
     return [];
-  }, [form.type, products, categories, stores]);
+  }, [form.type, products, categories, stores, vendorPoints]);
 
   const selectedTargetId =
     form.type === "product"
