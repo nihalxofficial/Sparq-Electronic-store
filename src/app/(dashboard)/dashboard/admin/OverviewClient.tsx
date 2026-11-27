@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 
 import { StatCardItem, AdminKPIs, RecentOrder } from "@/types/adminDashboard";
+import type { FinancialAnalyticsSummary } from "@/types/financials";
 import OrderStatusBadge from "@/components/shared/OrderStatusBadge";
 import { useSiteSettings } from "@/context/SiteSettingsContext";
 
@@ -33,6 +34,7 @@ interface OverviewClientProps {
   stats: StatCardItem[];
   kpis: AdminKPIs;
   recentOrders: RecentOrder[];
+  finance?: FinancialAnalyticsSummary | null;
 }
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -44,7 +46,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   CreditCard,
 };
 
-export default function OverviewClient({ stats, kpis, recentOrders }: OverviewClientProps) {
+export default function OverviewClient({ stats, kpis, recentOrders, finance }: OverviewClientProps) {
   const { currencySymbol } = useSiteSettings();
 
   return (
@@ -124,6 +126,56 @@ export default function OverviewClient({ stats, kpis, recentOrders }: OverviewCl
           );
         })}
       </div>
+
+      {/* ── Financials (last 30 days) — the same money the per-order breakdown shows ── */}
+      {finance && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          {[
+            {
+              label: "Revenue (30d)",
+              value: finance.totalCustomerPaid,
+              icon: DollarSign,
+              tone: "text-[var(--foreground)]",
+            },
+            {
+              label: "Profit / Loss (30d)",
+              value: finance.totalProfitWithDiscounts,
+              icon: TrendingUp,
+              tone:
+                finance.totalProfitWithDiscounts >= 0
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-rose-600 dark:text-rose-400",
+            },
+            {
+              label: "Platform commission (30d)",
+              value: finance.totalPlatformCommission,
+              icon: CreditCard,
+              tone: "text-[var(--foreground)]",
+            },
+          ].map((item) => {
+            const Icon = item.icon;
+            const amount = Number(item.value) || 0;
+            return (
+              <div
+                key={item.label}
+                className="bg-[var(--surface-elevated)] border border-[var(--border-color)] rounded-2xl p-5 shadow-xs flex items-center gap-4"
+              >
+                <div className="p-2.5 rounded-xl bg-[var(--brand-flat)]/10 text-[var(--brand-flat)] border border-[var(--brand-flat)]/20">
+                  <Icon className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-[var(--foreground-muted)]">{item.label}</p>
+                  <p className={`text-xl font-black tracking-tight ${item.tone}`}>
+                    {amount < 0 ? "-" : ""}
+                    {currencySymbol}
+                    {Math.abs(amount).toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* ── KPI Highlight Banner ── */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-[var(--surface-elevated)] border border-[var(--border-color)] shadow-xs">

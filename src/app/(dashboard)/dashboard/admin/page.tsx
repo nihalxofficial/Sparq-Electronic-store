@@ -17,6 +17,7 @@ export default async function AdminDashboardPage() {
       stats={data.stats}
       kpis={data.kpis}
       recentOrders={data.recentOrders}
+      finance={data.finance}
     />
   );
 }

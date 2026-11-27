@@ -18,6 +18,7 @@ import { asStore, getMyStore } from "@/lib/api/vendorStore";
 import { asSubscription, getMySubscription } from "@/lib/api/vendorSubscription";
 import { asOrderSummary, getMyOrderSummary } from "@/lib/api/vendorOrders";
 import { getSiteSettings } from "@/lib/api/siteSettings";
+import { getVendorOrderFinancials } from "@/lib/api/financials";
 import { formatOrderDate } from "@/lib/dateTime";
 import { formatPrice } from "@/lib/currency";
 import { isPaidPlan, planPrice } from "@/lib/vendorPlan";
@@ -35,12 +36,16 @@ export const dynamic = "force-dynamic";
 export default async function VendorOverviewPage() {
   const user = await getRequiredRole("vendor");
 
-  const [storeRes, application, subscriptionOverview, orderSummary, settingsRes] = await Promise.all([
+  const [storeRes, application, subscriptionOverview, orderSummary, settingsRes, financeRes] = await Promise.all([
     getMyStore().then(asStore).catch(() => null),
     getMyVendorApplication().then(asApplication).catch(() => null),
     getMySubscription().then(asSubscription).catch(() => null),
     getMyOrderSummary().then(asOrderSummary).catch(() => null),
     getSiteSettings(),
+    // The same per-order financials the seller's breakdown modal shows; a free
+    // plan is refused by the API, so this simply resolves to null and the cards
+    // stay hidden rather than showing a guessed number.
+    getVendorOrderFinancials({ days: 30, limit: 1 }).catch(() => null),
   ]);
 
   const currency = settingsRes?.data?.currency;
@@ -214,6 +219,34 @@ export default async function VendorOverviewPage() {
             </div>
           ))}
         </div>
+
+        {/* Revenue and profit/loss — the same figures the order breakdown shows */}
+        {financeRes?.summary && (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <div className="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2">
+              <p className="text-base font-bold text-[var(--foreground)]">
+                {formatPrice(financeRes.summary.totalCustomerPaid, currency)}
+              </p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--foreground-muted)]">
+                Revenue (30d)
+              </p>
+            </div>
+            <div className="rounded-xl border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2">
+              <p
+                className={`text-base font-bold ${
+                  financeRes.summary.totalProfitWithDiscounts >= 0
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-rose-600 dark:text-rose-400"
+                }`}
+              >
+                {formatPrice(financeRes.summary.totalProfitWithDiscounts, currency)}
+              </p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--foreground-muted)]">
+                Profit / Loss (30d)
+              </p>
+            </div>
+          </div>
+        )}
 
         {(orderSummary?.pending ?? 0) > 0 && (
           <p className="mt-2 text-[10px] leading-relaxed text-[var(--foreground-muted)]">

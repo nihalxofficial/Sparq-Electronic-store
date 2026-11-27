@@ -5,6 +5,7 @@ import { getTransactions } from "@/lib/api/transactions";
 import { getCategories } from "@/lib/api/categories";
 import { getSiteSettings } from "@/lib/api/siteSettings";
 import { getAdminPayouts } from "@/lib/api/deliveries";
+import { getAdminOrderFinancials } from "@/lib/api/financials";
 import { getCurrencySymbol } from "@/lib/currency";
 import { aggregateAdminDashboard } from "@/lib/dashboard-helpers";
 
@@ -17,7 +18,7 @@ import { aggregateAdminDashboard } from "@/lib/dashboard-helpers";
  */
 export async function getAdminDashboardData() {
   try {
-    const [ordersRes, productsRes, usersRes, transRes, catRes, settingsRes, payoutsRes] = await Promise.allSettled([
+    const [ordersRes, productsRes, usersRes, transRes, catRes, settingsRes, payoutsRes, financeRes] = await Promise.allSettled([
       getAllOrders({ limit: 1000 }),
       // The overview costs every sold line, so it needs the admin shape.
       getProducts({ limit: 1000 }, { admin: true }),
@@ -28,6 +29,9 @@ export async function getAdminDashboardData() {
       // The riders' money, for the one expense the product margins cannot see.
       // `all` because the board's totals cover every order it has ever counted.
       getAdminPayouts({ range: "all", limit: 1 }),
+      // The same per-order financials the breakdown modal shows, folded into a
+      // 30-day summary so the dashboard can surface revenue and profit/loss.
+      getAdminOrderFinancials({ days: 30, limit: 1 }),
     ]);
 
     const orders =
@@ -92,17 +96,25 @@ export async function getAdminDashboardData() {
         ? Number(payoutsRes.value?.data?.totals?.paid ?? 0) || 0
         : 0;
 
-    return aggregateAdminDashboard(
-      orders,
-      products,
-      users,
-      transactions,
-      categories,
-      currencySymbol,
-      riderFeesPaid
-    );
+    // The dashboard shows the SAME money the per-order breakdown shows: revenue
+    // and profit/loss come from the financial summary, not a separate count.
+    const finance =
+      financeRes.status === "fulfilled" ? financeRes.value?.summary ?? null : null;
+
+    return {
+      ...aggregateAdminDashboard(
+        orders,
+        products,
+        users,
+        transactions,
+        categories,
+        currencySymbol,
+        riderFeesPaid
+      ),
+      finance,
+    };
   } catch (error) {
     console.error("Failed to fetch admin dashboard real-time data:", error);
-    return aggregateAdminDashboard([], [], [], [], [], "$");
+    return { ...aggregateAdminDashboard([], [], [], [], [], "$"), finance: null };
   }
 }
