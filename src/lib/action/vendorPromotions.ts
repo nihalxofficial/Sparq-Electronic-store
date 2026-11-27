@@ -17,15 +17,18 @@ import { isVendorRole } from "../core/roles";
  * the account from the token and the window from the live plan.
  */
 
-/** Pins one of the seller's own listings for the window the plan states. */
-export const featureMyProduct = async (productId: string) => {
+/** Pins one of the seller's own listings for a length up to the plan's window. */
+export const featureMyProduct = async (productId: string, days?: number) => {
   const user = await getUserSession();
   if (!isVendorRole(user)) {
     return { success: false as const, message: "Vendor access required." };
   }
-  return serverMutation("/vendor-promotions", { productId }, "POST", {
-    explainForbidden: true,
-  });
+  return serverMutation(
+    "/vendor-promotions",
+    { productId, ...(days ? { days } : {}) },
+    "POST",
+    { explainForbidden: true }
+  );
 };
 
 /**

@@ -114,6 +114,9 @@ export default function VendorPromotionsClient({
   const [pickCategory, setPickCategory] = useState("");
   const [pickSubCategory, setPickSubCategory] = useState("");
   const [pickedId, setPickedId] = useState<string>("");
+  // How long to pin the chosen listing, in days. It opens at the plan's window
+  // and can be shortened; the server caps it at the plan and the period's end.
+  const [days, setDays] = useState<number>(Math.max(1, allowance.durationDays || 1));
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const atLimit = allowance.used >= allowance.limit;
@@ -179,7 +182,7 @@ export default function VendorPromotionsClient({
 
     setBusyId(pickedId);
     try {
-      const res = await featureMyProduct(pickedId);
+      const res = await featureMyProduct(pickedId, days);
       if (res?.success === false) {
         // The API names the reason — no slot left, a plan that ended, a shop
         // that is suspended — so the seller reads that instead of a guess.
@@ -314,7 +317,7 @@ export default function VendorPromotionsClient({
                 still in review or an archived one would use a slot on something
                 nobody can find.
                 {allowance.durationDays > 0 &&
-                  ` It stays up for ${allowance.durationDays} day${allowance.durationDays === 1 ? "" : "s"}.`}
+                  ` Pick how long it stays up — up to ${allowance.durationDays} day${allowance.durationDays === 1 ? "" : "s"}, your plan's window.`}
               </p>
             </div>
             <button
@@ -432,6 +435,29 @@ export default function VendorPromotionsClient({
             </ul>
           )}
 
+          {allowance.durationDays > 0 && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-[var(--border-color)] bg-[var(--surface)] px-3 py-2">
+              <span className="text-[11px] font-semibold text-[var(--foreground-muted)]">Run for</span>
+              <input
+                type="number"
+                min={1}
+                max={allowance.durationDays}
+                value={days}
+                onChange={(event) => {
+                  const next = Number(event.target.value);
+                  if (Number.isFinite(next)) {
+                    setDays(Math.max(1, Math.min(allowance.durationDays, Math.round(next))));
+                  }
+                }}
+                className="h-8 w-20 rounded-lg border border-[var(--border-color)] bg-[var(--surface-elevated)] px-2 text-[11px] font-bold text-[var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-flat)]/35"
+                aria-label="Days the placement runs"
+              />
+              <span className="text-[11px] text-[var(--foreground-muted)]">
+                day{days === 1 ? "" : "s"} — up to your plan's {allowance.durationDays}
+              </span>
+            </div>
+          )}
+
           <div className="mt-3 flex items-center justify-end gap-2">
             <button
               type="button"
@@ -451,7 +477,7 @@ export default function VendorPromotionsClient({
             >
               {busyId && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               Feature it
-              {allowance.durationDays > 0 && ` for ${allowance.durationDays} days`}
+              {days > 0 && ` for ${days} day${days === 1 ? "" : "s"}`}
             </button>
           </div>
         </section>
