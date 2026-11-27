@@ -30,7 +30,6 @@ export interface VendorPlan {
   featuredDurationDays: number;
   activeCoupons: number;
   analytics: "basic" | "detailed" | "advanced";
-  salesReports: "basic" | "advanced";
   /** No file, the CSV only, or both the CSV and the PDF report. */
   exports: "none" | "csv" | "pdf" | "csv+pdf";
   storeCustomization: "basic" | "enhanced" | "full";

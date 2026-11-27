@@ -328,7 +328,6 @@ export interface VendorPlanPayload {
   featuredDurationDays?: number;
   activeCoupons?: number;
   analytics?: string;
-  salesReports?: string;
   exports?: string;
   storeCustomization?: string;
   promotionalCampaigns?: string;

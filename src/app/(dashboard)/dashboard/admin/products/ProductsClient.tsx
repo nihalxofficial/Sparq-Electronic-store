@@ -695,14 +695,18 @@ export default function ProductsClient({
                           >
                             <Eye className="w-[18px] h-[18px]" />
                           </Link>
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEdit(product)}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--foreground-muted)] hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50 transition-colors cursor-pointer bg-transparent"
-                            title="Quick Edit"
-                          >
-                            <Edit2 className="w-[18px] h-[18px]" />
-                          </button>
+                          {/* Edit and Delete are for the desk's own products only;
+                              a seller's listing can be archived or reviewed here, not edited. */}
+                          {!isSellerListing(product) && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEdit(product)}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[var(--foreground-muted)] hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/50 transition-colors cursor-pointer bg-transparent"
+                              title="Quick Edit (your own products only)"
+                            >
+                              <Edit2 className="w-[18px] h-[18px]" />
+                            </button>
+                          )}
                           {listingStatus === "pending_review" && (
                             <>
                               <button

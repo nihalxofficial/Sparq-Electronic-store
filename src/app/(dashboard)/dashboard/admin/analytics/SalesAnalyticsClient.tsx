@@ -312,11 +312,11 @@ export default function SalesAnalyticsClient({
                 <TrendingUp className="w-4 h-4" />
               </div>
               <h3 className="text-base font-bold text-[var(--foreground)]">
-                Profit &amp; Loss Analytics
+                Gross Margin
               </h3>
             </div>
             <p className="text-xs text-[var(--foreground-muted)] mt-0.5">
-              Revenue vs. cost vs. net profit breakdown by period
+              Revenue vs. frozen cost vs. gross margin by period (before commission &amp; rider fee)
               {/*
                 The per-period lines are product margins, so they cannot see the
                 riders: a delivery fee belongs to the job, not to any line in the
@@ -387,7 +387,7 @@ export default function SalesAnalyticsClient({
               : "bg-amber-50 dark:bg-amber-950/30 border-amber-100 dark:border-amber-900/40"
           }`}>
             <p className={`text-[10px] font-bold uppercase tracking-wider ${kpis.totalProfit >= 0 ? "text-emerald-500" : "text-amber-500"}`}>
-              {kpis.totalProfit >= 0 ? "Net Profit" : "Net Loss"}
+              {kpis.totalProfit >= 0 ? "Gross Profit" : "Gross Loss"}
             </p>
             <p className="text-lg font-black text-[var(--foreground)] mt-0.5">
               {formatPrice(kpis.totalProfit)}
@@ -456,7 +456,7 @@ export default function SalesAnalyticsClient({
                     ? "Sell Price (Revenue)"
                     : value === "cost"
                     ? "Invest Price (Cost)"
-                    : "Net Profit"
+                    : "Gross margin"
                 }
                 wrapperStyle={{ fontSize: "11px", paddingTop: "10px" }}
               />
@@ -507,7 +507,7 @@ export default function SalesAnalyticsClient({
           </div>
           <div className="flex items-center gap-2">
             <div className="w-8 h-0.5 bg-emerald-500 rounded" />
-            <span className="font-semibold text-[var(--foreground-muted)]">Net Profit</span>
+            <span className="font-semibold text-[var(--foreground-muted)]">Gross margin</span>
           </div>
           <span className="ml-auto text-[10px] text-[var(--foreground-muted)]">
             * Products without an invest price contribute $0 cost
