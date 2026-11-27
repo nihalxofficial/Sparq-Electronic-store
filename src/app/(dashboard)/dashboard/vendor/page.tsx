@@ -11,6 +11,7 @@ import {
   Store,
   Tag,
   Ticket,
+  Trophy,
 } from "lucide-react";
 import { getRequiredRole } from "@/lib/core/session";
 import { asApplication, getMyVendorApplication } from "@/lib/api/vendor";
@@ -259,12 +260,26 @@ export default async function VendorOverviewPage() {
                 {pointsRes.totalPoints.toLocaleString()}
               </p>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--foreground-muted)]">
-                Points · {pointsRes.sellPoints.toLocaleString()} sold · {pointsRes.placementPoints.toLocaleString()} placement
+                Points · {pointsRes.sellPoints.toLocaleString()} sold · {pointsRes.placementPoints.toLocaleString()} plan
               </p>
             </div>
-            <span className="shrink-0 rounded-md bg-[var(--surface-alt)] px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
-              Position {pointsRes.position} of {pointsRes.totalVendors}
-            </span>
+            {pointsRes.position <= 3 ? (
+              <span
+                className={`shrink-0 inline-flex items-center gap-1 rounded-md px-2 py-1 text-[9px] font-bold uppercase tracking-wider ${
+                  pointsRes.position === 1
+                    ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                    : pointsRes.position === 2
+                      ? "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                      : "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300"
+                }`}
+              >
+                <Trophy className="h-3 w-3" /> #{pointsRes.position} of {pointsRes.totalVendors}
+              </span>
+            ) : (
+              <span className="shrink-0 rounded-md bg-[var(--surface-alt)] px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
+                #{pointsRes.position} of {pointsRes.totalVendors}
+              </span>
+            )}
           </div>
         )}
 
