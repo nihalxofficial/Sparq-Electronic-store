@@ -628,6 +628,7 @@ Cancelling a paid order marks its payment **refunded**.
 
 ## Recent Changes
 
+- **Admin promotions:** the grant picker shows each seller's plan window (plan · window days · days left) and caps the grant to it before the click.
 - **Featured length:** the seller picks how many days to feature a listing, up to their plan window; a downgrade to a plan with no featured window clears the placements and pauses coupons past the new allowance.
 - **Admin product scope:** the desk edits and deletes only its own platform stock; a seller's listing can be approved, rejected or archived, never edited.
 - **Analytics label:** the product/chart profit is labelled **Gross margin** (revenue − frozen cost, before commission & rider fee); the dead salesReports plan field was removed.
