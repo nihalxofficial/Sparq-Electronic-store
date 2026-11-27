@@ -28,6 +28,7 @@ import {
   Check,
   CheckCircle2,
   Eye,
+  EyeOff,
   Settings,
   ChevronRight,
   Gem,
@@ -58,6 +59,7 @@ import {
 import { updateSiteSettings } from "@/lib/action/siteSettings";
 import { useSiteSettings } from "@/context/SiteSettingsContext";
 import { getCurrencySymbol } from "@/lib/currency";
+import { authClient } from "@/lib/auth-client";
 import ImageUploader from "@/components/shared/ImageUploader";
 import AppSelect from "@/components/shared/AppSelect";
 import { BrandLogoMark } from "@/components/homepage/Brand";
@@ -1059,6 +1061,56 @@ export default function AdminSettingsClient({
   const [footerCopyright, setFooterCopyright] = useState(
     current.footerCopyright || ""
   );
+
+  // ── Admin password change (better-auth) ──
+  // The admin changes their own sign-in password here, the same way a customer
+  // does on their settings page: verify the current one, then set a new one and
+  // revoke every other session.
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!currentPassword) {
+      toast.error("Please enter your current password.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("New passwords do not match!");
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters long.");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const { error } = await authClient.changePassword({
+        currentPassword,
+        newPassword,
+        revokeOtherSessions: true,
+      });
+
+      if (error) {
+        toast.error(error.message || "Failed to update password. Please try again.");
+        return;
+      }
+
+      toast.success("Password updated securely! Other sessions have been revoked.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to update password.");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   // ── Maintenance Mode: instant real-time toggle (saves immediately, no Publish required) ──
   const handleToggleMaintenance = async (isSelected: boolean) => {
@@ -3040,6 +3092,75 @@ export default function AdminSettingsClient({
                 <span>Store is live and operational — maintenance mode is OFF.</span>
               </div>
             )}
+          </SettingCard>
+
+          <SettingCard
+            title="Change Password"
+            subtitle="Update your sign-in password — other devices are signed out"
+            icon={Shield}
+          >
+            <form onSubmit={handlePasswordChange} className="space-y-3">
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--foreground-secondary)]">
+                  Current password
+                </label>
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Your current password"
+                  autoComplete="current-password"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--foreground-secondary)]">
+                  New password
+                </label>
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="At least 8 characters"
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-semibold text-[var(--foreground-secondary)]">
+                  Confirm new password
+                </label>
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repeat the new password"
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-[var(--foreground-muted)] hover:text-[var(--foreground)] cursor-pointer"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-3.5 h-3.5" />
+                  ) : (
+                    <Eye className="w-3.5 h-3.5" />
+                  )}
+                  {showPassword ? "Hide" : "Show"} passwords
+                </button>
+                <Button
+                  type="submit"
+                  isDisabled={isChangingPassword}
+                  className="bg-primary text-white text-xs font-bold px-4 py-2 rounded-xl cursor-pointer inline-flex items-center gap-2"
+                >
+                  {isChangingPassword ? "Updating…" : "Update Password"}
+                </Button>
+              </div>
+            </form>
           </SettingCard>
         </div>
       )}

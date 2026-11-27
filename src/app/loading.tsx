@@ -16,6 +16,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useSiteSettings } from "@/context/SiteSettingsContext";
+import { normalizeImageUrl } from "@/lib/imageUrl";
 
 type SectionKind = "catalog" | "product" | "cart" | "dashboard" | "generic";
 
@@ -103,11 +104,16 @@ export default function Loading() {
 
   const siteName = settings.siteName?.trim() || "Sparq";
   const siteTagline = settings.siteTagline?.trim() || "Better products. A brighter you.";
-  const resolvedLogo =
-    settings.navbarLogo?.light ||
-    settings.navbarLogo?.dark ||
-    settings.faviconUrl ||
-    "/icon.svg";
+
+  // The mark in the ring: the site icon first, then the navbar logo. The URL is
+  // normalised so an ImgBB *page* link is unwrapped to its direct image, which is
+  // what stops a placeholder from appearing instead of the artwork.
+  const resolvedLogo = normalizeImageUrl(
+    settings.faviconUrl || settings.navbarLogo?.light || settings.navbarLogo?.dark || ""
+  );
+  // A .ico cannot be styled or sized reliably inside this glass tile, so it (and
+  // a missing/blank logo) falls through to the animated mark below.
+  const isIco = /\.ico(\?|#|$)/i.test(resolvedLogo);
 
   useEffect(() => {
     setLogoSrc(resolvedLogo);
@@ -115,6 +121,7 @@ export default function Loading() {
   }, [resolvedLogo]);
 
   const activeLogo = logoSrc || resolvedLogo;
+  const showLogo = Boolean(activeLogo) && !logoFailed && !isIco;
   const { label: pageLabel, Icon, kind } = mounted
     ? getPageContext(pathname)
     : { label: "Loading", Icon: Zap, kind: "generic" as SectionKind };
@@ -218,23 +225,22 @@ export default function Loading() {
           {/* Center Brand Tile */}
           <div className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-[var(--border-color)] bg-[var(--surface-elevated)] shadow-lg ring-1 ring-primary/15">
             <div className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent animate-[shimmer_2.2s_infinite]" />
-            {!logoFailed && activeLogo ? (
+            {showLogo ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={activeLogo}
                 alt={siteName}
                 className="h-full w-full object-contain p-2 drop-shadow-xs"
-                onError={() => {
-                  if (activeLogo !== "/icon.svg") {
-                    setLogoSrc("/icon.svg");
-                  } else {
-                    setLogoFailed(true);
-                  }
-                }}
+                onError={() => setLogoFailed(true)}
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-brand-gradient text-[var(--on-grad-text)] font-black text-xl tracking-tight">
-                {siteName.slice(0, 1).toUpperCase()}
+              // A brand-neutral animated mark: shown when there is no usable
+              // favicon, it is a .ico, or the image failed to load — it fits any
+              // kind of site instead of guessing with a letter.
+              <div className="relative flex h-full w-full items-center justify-center bg-brand-gradient text-[var(--on-grad-text)]">
+                <Zap className="h-6 w-6 animate-[pulse_1.5s_ease-in-out_infinite]" />
+                <span className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/25" />
+                <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_2s_infinite]" />
               </div>
             )}
           </div>
